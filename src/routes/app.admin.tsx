@@ -21,7 +21,9 @@ function AdminLayout() {
   }
 
   const tabs = [
-    { to: "/app/admin", label: "Pending approvals", exact: true },
+    { to: "/app/admin", label: "Pending", exact: true },
+    { to: "/app/admin/board", label: "Board" },
+    { to: "/app/admin/faults", label: "Faults" },
     { to: "/app/admin/users", label: "Users" },
     { to: "/app/admin/properties", label: "Properties" },
     { to: "/app/admin/templates", label: "Templates" },
