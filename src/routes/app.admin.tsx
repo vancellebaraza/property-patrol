@@ -39,7 +39,7 @@ function AdminLayout() {
             <Link
               key={t.to}
               to={t.to}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </Link>
