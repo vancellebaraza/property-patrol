@@ -9,38 +9,174 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppFaultsRouteImport } from './routes/app.faults'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
+import { Route as AppChecklistsTemplateIdRouteImport } from './routes/app.checklists.$templateId'
+import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
+import { Route as AppAdminTemplatesRouteImport } from './routes/app.admin.templates'
+import { Route as AppAdminPropertiesRouteImport } from './routes/app.admin.properties'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFaultsRoute = AppFaultsRouteImport.update({
+  id: '/faults',
+  path: '/faults',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppChecklistsTemplateIdRoute = AppChecklistsTemplateIdRouteImport.update({
+  id: '/checklists/$templateId',
+  path: '/checklists/$templateId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminTemplatesRoute = AppAdminTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminPropertiesRoute = AppAdminPropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
+  '/app/faults': typeof AppFaultsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/admin/properties': typeof AppAdminPropertiesRoute
+  '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/app/faults': typeof AppFaultsRoute
+  '/app': typeof AppIndexRoute
+  '/app/admin/properties': typeof AppAdminPropertiesRoute
+  '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
+  '/app/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
+  '/app/faults': typeof AppFaultsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/admin/properties': typeof AppAdminPropertiesRoute
+  '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/admin'
+    | '/app/faults'
+    | '/app/'
+    | '/app/admin/properties'
+    | '/app/admin/templates'
+    | '/app/admin/users'
+    | '/app/checklists/$templateId'
+    | '/app/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/app/faults'
+    | '/app'
+    | '/app/admin/properties'
+    | '/app/admin/templates'
+    | '/app/admin/users'
+    | '/app/checklists/$templateId'
+    | '/app/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/admin'
+    | '/app/faults'
+    | '/app/'
+    | '/app/admin/properties'
+    | '/app/admin/templates'
+    | '/app/admin/users'
+    | '/app/checklists/$templateId'
+    | '/app/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +184,104 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/faults': {
+      id: '/app/faults'
+      path: '/faults'
+      fullPath: '/app/faults'
+      preLoaderRoute: typeof AppFaultsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/checklists/$templateId': {
+      id: '/app/checklists/$templateId'
+      path: '/checklists/$templateId'
+      fullPath: '/app/checklists/$templateId'
+      preLoaderRoute: typeof AppChecklistsTemplateIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/users': {
+      id: '/app/admin/users'
+      path: '/users'
+      fullPath: '/app/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/admin/templates': {
+      id: '/app/admin/templates'
+      path: '/templates'
+      fullPath: '/app/admin/templates'
+      preLoaderRoute: typeof AppAdminTemplatesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/admin/properties': {
+      id: '/app/admin/properties'
+      path: '/properties'
+      fullPath: '/app/admin/properties'
+      preLoaderRoute: typeof AppAdminPropertiesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminPropertiesRoute: typeof AppAdminPropertiesRoute
+  AppAdminTemplatesRoute: typeof AppAdminTemplatesRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminPropertiesRoute: AppAdminPropertiesRoute,
+  AppAdminTemplatesRoute: AppAdminTemplatesRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRouteWithChildren
+  AppFaultsRoute: typeof AppFaultsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppChecklistsTemplateIdRoute: typeof AppChecklistsTemplateIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRouteWithChildren,
+  AppFaultsRoute: AppFaultsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppChecklistsTemplateIdRoute: AppChecklistsTemplateIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
