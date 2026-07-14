@@ -109,7 +109,7 @@ function AdminFaults() {
                 </div>
                 <div className="text-sm text-muted-foreground mt-0.5">{f.fault_description}</div>
                 <div className="text-[10px] text-muted-foreground mt-1">
-                  Reported by {f.user_profiles?.full_name || f.user_profiles?.email || "unknown"} · {new Date(f.reported_at).toLocaleString()}
+                  Reported by {f.reporter?.full_name || f.reporter?.email || "unknown"} · {new Date(f.reported_at).toLocaleString()}
                   {f.resolved_at && <> · Resolved {new Date(f.resolved_at).toLocaleString()}</>}
                 </div>
               </div>
