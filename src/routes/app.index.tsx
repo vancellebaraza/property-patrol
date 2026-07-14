@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useAuth";
@@ -13,6 +14,12 @@ export const Route = createFileRoute("/app/")({
 
 function ChecklistsHome() {
   const { profile } = useProfile();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (profile?.role === "admin") {
+      navigate({ to: "/app/admin", replace: true });
+    }
+  }, [profile?.role, navigate]);
   const { data: property } = useProperty(profile?.property_id);
 
   const { data: templates, isLoading } = useQuery({
