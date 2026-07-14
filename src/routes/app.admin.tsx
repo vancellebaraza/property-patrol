@@ -32,7 +32,7 @@ function AdminLayout() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Admin</h1>
-      <div className="border-b mb-6 flex gap-1">
+      <div className="border-b mb-6 flex gap-1 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {tabs.map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
           return (
