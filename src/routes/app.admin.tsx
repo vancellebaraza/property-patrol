@@ -21,7 +21,9 @@ function AdminLayout() {
   }
 
   const tabs = [
-    { to: "/app/admin", label: "Pending approvals", exact: true },
+    { to: "/app/admin", label: "Pending", exact: true },
+    { to: "/app/admin/board", label: "Board" },
+    { to: "/app/admin/faults", label: "Faults" },
     { to: "/app/admin/users", label: "Users" },
     { to: "/app/admin/properties", label: "Properties" },
     { to: "/app/admin/templates", label: "Templates" },
@@ -30,14 +32,14 @@ function AdminLayout() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Admin</h1>
-      <div className="border-b mb-6 flex gap-1">
+      <div className="border-b mb-6 flex gap-1 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {tabs.map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);
           return (
             <Link
               key={t.to}
               to={t.to}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </Link>

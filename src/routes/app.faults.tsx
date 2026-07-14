@@ -6,12 +6,11 @@ import { useProfile } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Wrench } from "lucide-react";
+import { Wrench, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/app/faults")({
   component: FaultsPage,
@@ -22,6 +21,7 @@ function FaultsPage() {
   const qc = useQueryClient();
   const [equipment, setEquipment] = useState("");
   const [desc, setDesc] = useState("");
+  const [filter, setFilter] = useState<"all" | "reported" | "broken" | "repaired">("all");
 
   const { data: faults } = useQuery({
     queryKey: ["faults", profile?.property_id],
@@ -30,6 +30,7 @@ function FaultsPage() {
       const { data, error } = await supabase
         .from("fault_log_entries")
         .select("*")
+        .eq("property_id", profile!.property_id!)
         .order("reported_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -67,46 +68,53 @@ function FaultsPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const filtered = (faults ?? []).filter((f: any) => filter === "all" || f.status === filter);
+
   return (
-    <div className="grid md:grid-cols-3 gap-6">
-      <div className="md:col-span-1">
+    <div className="grid lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-1 order-2 lg:order-1">
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Wrench className="h-4 w-4" />Report a fault</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Wrench className="h-4 w-4" />Report a fault</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <Label>Equipment</Label>
-              <Input value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="e.g. Kitchen dishwasher" />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What is broken?" />
-            </div>
-            <Button className="w-full" disabled={!equipment || !desc || create.isPending} onClick={() => create.mutate()}>
-              Report fault
+            <Input value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="Equipment (e.g. Pool pump)" className="h-11" />
+            <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What is wrong?" />
+            <Button className="w-full h-11" disabled={!equipment || !desc || create.isPending} onClick={() => create.mutate()}>
+              <Plus className="h-4 w-4 mr-1" />Report fault
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      <div className="md:col-span-2 space-y-3">
-        <h2 className="font-semibold text-lg">Fault log</h2>
-        {faults?.length === 0 && <p className="text-sm text-muted-foreground">No faults reported.</p>}
-        {faults?.map((f: any) => (
+      <div className="lg:col-span-2 order-1 lg:order-2 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="font-bold text-xl">Fault log</h1>
+          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="reported">Reported</SelectItem>
+              <SelectItem value="broken">Broken</SelectItem>
+              <SelectItem value="repaired">Repaired</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {filtered.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">No faults.</p>}
+        {filtered.map((f: any) => (
           <Card key={f.id}>
-            <CardContent className="py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+            <CardContent className="py-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
+                <div className="min-w-0">
                   <div className="font-medium">{f.equipment_type}</div>
-                  <div className="text-sm text-muted-foreground mt-1">{f.fault_description}</div>
-                  <div className="text-xs text-muted-foreground mt-2">
+                  <div className="text-sm text-muted-foreground mt-0.5">{f.fault_description}</div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
                     Reported {new Date(f.reported_at).toLocaleString()}
                     {f.resolved_at && <> · Resolved {new Date(f.resolved_at).toLocaleString()}</>}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <FaultBadge status={f.status} />
-                  <Select value={f.status} onValueChange={(v) => updateStatus.mutate({ id: f.id, status: v as "reported" | "broken" | "repaired" })}>
-                    <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <Select value={f.status} onValueChange={(v) => updateStatus.mutate({ id: f.id, status: v as any })}>
+                    <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="reported">Reported</SelectItem>
                       <SelectItem value="broken">Broken</SelectItem>
