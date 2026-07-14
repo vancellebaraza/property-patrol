@@ -37,7 +37,7 @@ function AppLayout() {
     );
   }
 
-  if (!profile || profile.role === null || profile.property_id === null || !profile.active) {
+  if (!profile || profile.role === null || !profile.active || (profile.role !== "admin" && profile.property_id === null)) {
     return <PendingApproval email={user.email ?? ""} name={profile?.full_name ?? ""} onSignOut={signOut} inactive={profile?.active === false} />;
   }
 

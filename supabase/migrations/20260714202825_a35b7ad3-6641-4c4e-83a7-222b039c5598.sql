@@ -246,7 +246,7 @@ CREATE POLICY "insert submissions for own property/role" ON public.checklist_sub
     AND EXISTS (
       SELECT 1 FROM public.checklist_templates t
       WHERE t.id = template_id
-        AND t.property_id = property_id
+        AND t.property_id = checklist_submissions.property_id
         AND t.role_required = public.get_user_role(auth.uid())
     )
   );
