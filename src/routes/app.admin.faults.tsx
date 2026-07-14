@@ -27,11 +27,20 @@ function AdminFaults() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fault_log_entries")
-        .select("*, user_profiles!fault_log_entries_reported_by_fkey(full_name, email)")
+        .select("*")
         .eq("property_id", activeId!)
         .order("reported_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const reporterIds = Array.from(new Set((data ?? []).map((f: any) => f.reported_by).filter(Boolean)));
+      let reporters: Record<string, any> = {};
+      if (reporterIds.length) {
+        const { data: ups } = await supabase
+          .from("user_profiles")
+          .select("id, full_name, email")
+          .in("id", reporterIds);
+        for (const u of ups ?? []) reporters[u.id] = u;
+      }
+      return (data ?? []).map((f: any) => ({ ...f, reporter: reporters[f.reported_by] }));
     },
   });
 

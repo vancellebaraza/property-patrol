@@ -20,6 +20,7 @@ import { Route as AppChecklistsTemplateIdRouteImport } from './routes/app.checkl
 import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
 import { Route as AppAdminTemplatesRouteImport } from './routes/app.admin.templates'
 import { Route as AppAdminPropertiesRouteImport } from './routes/app.admin.properties'
+import { Route as AppAdminFaultsRouteImport } from './routes/app.admin.faults'
 import { Route as AppAdminBoardRouteImport } from './routes/app.admin.board'
 
 const AuthRoute = AuthRouteImport.update({
@@ -77,6 +78,11 @@ const AppAdminPropertiesRoute = AppAdminPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminFaultsRoute = AppAdminFaultsRouteImport.update({
+  id: '/faults',
+  path: '/faults',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminBoardRoute = AppAdminBoardRouteImport.update({
   id: '/board',
   path: '/board',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/app/faults': typeof AppFaultsRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
+  '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/app/faults': typeof AppFaultsRoute
   '/app': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
+  '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/app/faults': typeof AppFaultsRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
+  '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
   '/app/admin/users': typeof AppAdminUsersRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/app/faults'
     | '/app/'
     | '/app/admin/board'
+    | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
     | '/app/admin/users'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/app/faults'
     | '/app'
     | '/app/admin/board'
+    | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
     | '/app/admin/users'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/app/faults'
     | '/app/'
     | '/app/admin/board'
+    | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
     | '/app/admin/users'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminPropertiesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/faults': {
+      id: '/app/admin/faults'
+      path: '/faults'
+      fullPath: '/app/admin/faults'
+      preLoaderRoute: typeof AppAdminFaultsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/app/admin/board': {
       id: '/app/admin/board'
       path: '/board'
@@ -264,6 +283,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminBoardRoute: typeof AppAdminBoardRoute
+  AppAdminFaultsRoute: typeof AppAdminFaultsRoute
   AppAdminPropertiesRoute: typeof AppAdminPropertiesRoute
   AppAdminTemplatesRoute: typeof AppAdminTemplatesRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
@@ -272,6 +292,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminBoardRoute: AppAdminBoardRoute,
+  AppAdminFaultsRoute: AppAdminFaultsRoute,
   AppAdminPropertiesRoute: AppAdminPropertiesRoute,
   AppAdminTemplatesRoute: AppAdminTemplatesRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
