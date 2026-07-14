@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppFaultsRouteImport } from './routes/app.faults'
+import { Route as AppChecklistsTemplateIdRouteImport } from './routes/app.checklists.$templateId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -28,34 +31,70 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFaultsRoute = AppFaultsRouteImport.update({
+  id: '/faults',
+  path: '/faults',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChecklistsTemplateIdRoute = AppChecklistsTemplateIdRouteImport.update({
+  id: '/checklists/$templateId',
+  path: '/checklists/$templateId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/faults': typeof AppFaultsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
   '/auth': typeof AuthRoute
+  '/app/faults': typeof AppFaultsRoute
+  '/app': typeof AppIndexRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/faults': typeof AppFaultsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/faults'
+    | '/app/'
+    | '/app/checklists/$templateId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/auth'
-  id: '__root__' | '/' | '/app' | '/auth'
+  to: '/' | '/auth' | '/app/faults' | '/app' | '/app/checklists/$templateId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/faults'
+    | '/app/'
+    | '/app/checklists/$templateId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
 
@@ -82,12 +121,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/faults': {
+      id: '/app/faults'
+      path: '/faults'
+      fullPath: '/app/faults'
+      preLoaderRoute: typeof AppFaultsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/checklists/$templateId': {
+      id: '/app/checklists/$templateId'
+      path: '/checklists/$templateId'
+      fullPath: '/app/checklists/$templateId'
+      preLoaderRoute: typeof AppChecklistsTemplateIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppFaultsRoute: typeof AppFaultsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppChecklistsTemplateIdRoute: typeof AppChecklistsTemplateIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppFaultsRoute: AppFaultsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppChecklistsTemplateIdRoute: AppChecklistsTemplateIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport

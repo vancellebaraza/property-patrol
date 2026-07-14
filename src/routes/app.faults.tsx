@@ -56,7 +56,7 @@ function FaultsPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: "reported" | "broken" | "repaired" }) => {
       const { error } = await supabase
         .from("fault_log_entries")
         .update({ status, resolved_at: status === "repaired" ? new Date().toISOString() : null })
