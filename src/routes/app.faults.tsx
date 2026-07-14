@@ -105,7 +105,7 @@ function FaultsPage() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <FaultBadge status={f.status} />
-                  <Select value={f.status} onValueChange={(v) => updateStatus.mutate({ id: f.id, status: v })}>
+                  <Select value={f.status} onValueChange={(v) => updateStatus.mutate({ id: f.id, status: v as "reported" | "broken" | "repaired" })}>
                     <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="reported">Reported</SelectItem>
