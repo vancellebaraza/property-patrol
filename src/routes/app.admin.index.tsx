@@ -22,7 +22,7 @@ function PendingApprovals() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .or("role.is.null,property_id.is.null")
+        .or("role.is.null,and(property_id.is.null,role.neq.admin)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -86,7 +86,7 @@ function PendingRow({ user, properties, onSaved }: any) {
             {properties.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={() => save.mutate()} disabled={!role || !propertyId || save.isPending}>Assign</Button>
+        <Button onClick={() => save.mutate()} disabled={!role || (role !== "admin" && !propertyId) || save.isPending}>Assign</Button>
       </CardContent>
     </Card>
   );
