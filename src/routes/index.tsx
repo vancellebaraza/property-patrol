@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ClipboardCheck, ShieldCheck, ClipboardList, Wrench } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -15,7 +16,10 @@ function Landing() {
             <ClipboardCheck className="h-6 w-6" />
             <span className="text-xl font-bold">OpsCheck</span>
           </div>
-          <Link to="/auth"><Button>Sign in</Button></Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link to="/auth"><Button>Sign in</Button></Link>
+          </div>
         </div>
       </header>
 

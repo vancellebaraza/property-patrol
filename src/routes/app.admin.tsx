@@ -46,7 +46,9 @@ function AdminLayout() {
           );
         })}
       </div>
-      <Outlet />
+      <div key={pathname} className="route-view">
+        <Outlet />
+      </div>
     </div>
   );
 }

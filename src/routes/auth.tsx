@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ClipboardCheck } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -17,15 +18,28 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const exitTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/app" });
     });
+
+    return () => {
+      if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current);
+    };
   }, [navigate]);
+
+  function beginExit() {
+    setIsExiting(true);
+    exitTimerRef.current = window.setTimeout(() => {
+      navigate({ to: "/app" });
+    }, 800);
+  }
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +48,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Signed in");
-    navigate({ to: "/app" });
+    beginExit();
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -51,17 +65,18 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Account created — signing you in");
-    navigate({ to: "/app" });
+    beginExit();
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+    <div className={`min-h-screen flex items-center justify-center bg-muted/30 px-4 relative auth-shell${isExiting ? " auth-exit" : ""}`}>
+      <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-6 text-primary">
+        <Link to="/" className={`flex items-center justify-center gap-2 mb-6 text-primary auth-brand${isExiting ? " auth-exit" : ""}`}>
           <ClipboardCheck className="h-7 w-7" />
           <span className="text-2xl font-bold">OpsCheck</span>
         </Link>
-        <Card>
+        <Card className={`auth-card${isExiting ? " auth-exit" : ""}`}>
           <CardHeader>
             <CardTitle>Welcome</CardTitle>
             <CardDescription>Sign in or create your account to continue.</CardDescription>

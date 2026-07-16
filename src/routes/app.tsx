@@ -4,6 +4,7 @@ import { useProfile } from "@/hooks/useAuth";
 import { useProperty, themeStyle } from "@/hooks/useProperty";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ClipboardCheck, LogOut, Loader2, ShieldAlert, Settings, ClipboardList, Wrench, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -90,11 +91,13 @@ function AppLayout() {
                 {profile.full_name || profile.email} · <span className="capitalize">{profile.role}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sign out"><LogOut className="h-4 w-4" /></Button>
+              <ThemeToggle />
             </div>
           </nav>
 
           {/* Mobile: role chip + signout */}
           <div className="sm:hidden flex items-center gap-2">
+            <ThemeToggle />
             <span className="text-[10px] uppercase font-semibold px-2 py-1 rounded bg-muted text-muted-foreground">
               {profile.role}
             </span>

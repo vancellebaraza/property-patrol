@@ -106,38 +106,38 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: oklch(0.036 0.004 255);
+  --foreground: oklch(0.972 0.003 250);
+  --card: oklch(0.071 0.006 250);
+  --card-foreground: oklch(0.972 0.003 250);
+  --popover: oklch(0.071 0.006 250);
+  --popover-foreground: oklch(0.972 0.003 250);
+  --primary: oklch(0.9 0.008 250);
+  --primary-foreground: oklch(0.07 0.006 250);
+  --secondary: oklch(0.105 0.008 248);
+  --secondary-foreground: oklch(0.972 0.003 250);
+  --muted: oklch(0.105 0.008 248);
+  --muted-foreground: oklch(0.72 0.01 250);
+  --accent: oklch(0.118 0.008 248);
+  --accent-foreground: oklch(0.972 0.003 250);
+  --destructive: oklch(0.72 0.17 24);
+  --destructive-foreground: oklch(0.972 0.003 250);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.86 0.008 250);
+  --chart-1: oklch(0.74 0.15 160);
+  --chart-2: oklch(0.68 0.14 280);
+  --chart-3: oklch(0.78 0.12 80);
+  --chart-4: oklch(0.66 0.16 320);
+  --chart-5: oklch(0.82 0.1 220);
+  --sidebar: oklch(0.071 0.006 250);
+  --sidebar-foreground: oklch(0.972 0.003 250);
+  --sidebar-primary: oklch(0.9 0.008 250);
+  --sidebar-primary-foreground: oklch(0.07 0.006 250);
+  --sidebar-accent: oklch(0.105 0.008 248);
+  --sidebar-accent-foreground: oklch(0.972 0.003 250);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.86 0.008 250);
 }
 
 @layer base {
@@ -148,5 +148,78 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    transition: background-color 250ms ease, color 250ms ease;
+  }
+}
+
+@layer components {
+  .auth-shell {
+    animation: auth-slide-in 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .auth-brand {
+    animation: auth-slide-in 1200ms 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .auth-card {
+    animation: auth-slide-in 1200ms 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .auth-shell.auth-exit {
+    animation: auth-slide-out 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .auth-brand.auth-exit {
+    animation: auth-slide-out 900ms 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .auth-card.auth-exit {
+    animation: auth-slide-out 900ms 260ms cubic-bezier(0.16, 1, 0.36, 1) both;
+  }
+
+  .route-view {
+    animation: route-fade-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: opacity, transform;
+  }
+}
+
+@keyframes auth-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(28px) scale(0.98);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateX(-4px) scale(1.002);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes auth-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-36px) scale(0.98);
+  }
+}
+
+@keyframes route-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
