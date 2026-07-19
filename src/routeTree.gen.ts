@@ -18,6 +18,7 @@ import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
 import { Route as AppChecklistsTemplateIdRouteImport } from './routes/app.checklists.$templateId'
 import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
+import { Route as AppAdminTodosRouteImport } from './routes/app.admin.todos'
 import { Route as AppAdminTemplatesRouteImport } from './routes/app.admin.templates'
 import { Route as AppAdminPropertiesRouteImport } from './routes/app.admin.properties'
 import { Route as AppAdminFaultsRouteImport } from './routes/app.admin.faults'
@@ -68,6 +69,11 @@ const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminTodosRoute = AppAdminTodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminTemplatesRoute = AppAdminTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin': typeof AppAdminIndexRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin/'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin/'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminUsersRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/admin/todos': {
+      id: '/app/admin/todos'
+      path: '/todos'
+      fullPath: '/app/admin/todos'
+      preLoaderRoute: typeof AppAdminTodosRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/app/admin/templates': {
       id: '/app/admin/templates'
       path: '/templates'
@@ -286,6 +305,7 @@ interface AppAdminRouteChildren {
   AppAdminFaultsRoute: typeof AppAdminFaultsRoute
   AppAdminPropertiesRoute: typeof AppAdminPropertiesRoute
   AppAdminTemplatesRoute: typeof AppAdminTemplatesRoute
+  AppAdminTodosRoute: typeof AppAdminTodosRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
@@ -295,6 +315,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminFaultsRoute: AppAdminFaultsRoute,
   AppAdminPropertiesRoute: AppAdminPropertiesRoute,
   AppAdminTemplatesRoute: AppAdminTemplatesRoute,
+  AppAdminTodosRoute: AppAdminTodosRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }

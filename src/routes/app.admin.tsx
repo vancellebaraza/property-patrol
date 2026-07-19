@@ -23,6 +23,7 @@ function AdminLayout() {
   const tabs = [
     { to: "/app/admin", label: "Pending", exact: true },
     { to: "/app/admin/board", label: "Board" },
+    { to: "/app/admin/todos", label: "To-Do" },
     { to: "/app/admin/faults", label: "Faults" },
     { to: "/app/admin/users", label: "Users" },
     { to: "/app/admin/properties", label: "Properties" },

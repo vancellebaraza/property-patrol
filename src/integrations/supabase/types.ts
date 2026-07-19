@@ -303,6 +303,54 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan_date: string
+          plan_text: string
+          property_id: string
+          status: "planned" | "done"
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_date: string
+          plan_text: string
+          property_id: string
+          status?: "planned" | "done"
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_date?: string
+          plan_text?: string
+          property_id?: string
+          status?: "planned" | "done"
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_plans_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           active: boolean
