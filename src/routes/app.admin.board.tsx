@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAllProperties, themeStyle } from "@/hooks/useProperty";
+import { useAllProperties } from "@/hooks/useProperty";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -24,114 +24,130 @@ function fmtISO(d: Date) { return d.toISOString().slice(0, 10); }
 function addDays(d: Date, n: number) { const nd = new Date(d); nd.setDate(nd.getDate() + n); return nd; }
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-type CellStatus = "submitted" | "in_progress" | "incomplete" | "none";
+type CellStatus = "submitted" | "in_progress" | "none";
+type PropertyCellState = "green" | "amber" | "red" | "gray";
+
+type PropertyDayMetrics = {
+  total: number;
+  submitted: number;
+  in_progress: number;
+  none: number;
+  state: PropertyCellState;
+};
 
 function BoardPage() {
   const { data: properties } = useAllProperties();
-  const [propertyId, setPropertyId] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const [drawer, setDrawer] = useState<{ userId: string; userName: string; date: string } | null>(null);
-
-  const activeProperty = properties?.find((p) => p.id === propertyId) ?? properties?.[0];
-  const activeId = activeProperty?.id ?? null;
+  const [propertyDayDrawer, setPropertyDayDrawer] = useState<{ propertyId: string; propertyName: string; date: string } | null>(null);
+  const [detailDrawer, setDetailDrawer] = useState<{ userId: string; userName: string; date: string } | null>(null);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const dayKeys = useMemo(() => days.map((d) => fmtISO(d)), [weekStart]);
   const weekEnd = addDays(weekStart, 6);
 
-  const { data: staff } = useQuery({
-    queryKey: ["staff-by-property", activeId],
-    enabled: !!activeId,
+  const { data: staffData, isLoading: staffLoading } = useQuery({
+    queryKey: ["staff-all-properties"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("id, full_name, email, role")
-        .eq("property_id", activeId!)
+        .select("id, full_name, email, role, property_id")
         .eq("active", true)
         .not("role", "is", null)
         .neq("role", "admin")
         .order("full_name");
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
   });
 
-  const { data: submissions } = useQuery({
-    queryKey: ["submissions-week", activeId, fmtISO(weekStart)],
-    enabled: !!activeId,
+  const { data: submissions, isLoading: submissionsLoading } = useQuery({
+    queryKey: ["submissions-week-all-properties", fmtISO(weekStart)],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("checklist_submissions")
-        .select("id, user_id, status, submitted_at, period_start, period_end, template_id")
-        .eq("property_id", activeId!)
+        .select("id, user_id, property_id, status, submitted_at, period_start, period_end, template_id")
         .gte("period_start", fmtISO(weekStart))
         .lte("period_start", fmtISO(weekEnd));
       if (error) throw error;
-      return data;
+      return (data ?? []) as any[];
     },
   });
 
-  // Map: userId -> date -> submissions[]
-  const byUserDay = useMemo(() => {
-    const map = new Map<string, Map<string, any[]>>();
-    for (const s of submissions ?? []) {
-      const inner = map.get(s.user_id) ?? new Map();
-      const list = inner.get(s.period_start) ?? [];
-      list.push(s);
-      inner.set(s.period_start, list);
-      map.set(s.user_id, inner);
+  const staffByProperty = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const member of staffData ?? []) {
+      if (!member.property_id) continue;
+      const list = map.get(member.property_id) ?? [];
+      list.push(member);
+      map.set(member.property_id, list);
+    }
+    return map;
+  }, [staffData]);
+
+  const submissionsByPropertyUserDay = useMemo(() => {
+    const map = new Map<string, Map<string, Map<string, any[]>>>();
+    for (const submission of submissions ?? []) {
+      const propertyId = submission.property_id;
+      if (!propertyId) continue;
+      const propertyMap = map.get(propertyId) ?? new Map<string, Map<string, any[]>>();
+      const userMap = propertyMap.get(submission.user_id) ?? new Map<string, any[]>();
+      const dayList = userMap.get(submission.period_start) ?? [];
+      dayList.push(submission);
+      userMap.set(submission.period_start, dayList);
+      propertyMap.set(submission.user_id, userMap);
+      map.set(propertyId, propertyMap);
     }
     return map;
   }, [submissions]);
 
-  function cellStatus(userId: string, date: string): CellStatus {
-    const dayMap = byUserDay.get(userId);
+  function cellStatus(propertyId: string, userId: string, date: string): CellStatus {
+    const dayMap = submissionsByPropertyUserDay.get(propertyId)?.get(userId);
     const subs = dayMap?.get(date);
     if (!subs || subs.length === 0) return "none";
-    if (subs.some((s) => s.status === "submitted")) return "submitted";
+    if (subs.some((s: any) => s.status === "submitted")) return "submitted";
     return "in_progress";
   }
 
-  // Summary
+  function getPropertyDayMetrics(propertyId: string, date: string): PropertyDayMetrics {
+    const staff = staffByProperty.get(propertyId) ?? [];
+    if (staff.length === 0) return { total: 0, submitted: 0, in_progress: 0, none: 0, state: "gray" };
+
+    let submitted = 0;
+    let inProgress = 0;
+    let none = 0;
+
+    for (const user of staff) {
+      const status = cellStatus(propertyId, user.id, date);
+      if (status === "submitted") submitted++;
+      else if (status === "in_progress") inProgress++;
+      else none++;
+    }
+
+    const state = submitted === staff.length ? "green" : submitted > 0 || inProgress > 0 ? "amber" : "red";
+    return { total: staff.length, submitted, in_progress: inProgress, none, state };
+  }
+
   const summary = useMemo(() => {
-    let submitted = 0, inProg = 0, none = 0;
-    for (const u of staff ?? []) {
-      for (const d of days) {
-        const s = cellStatus(u.id, fmtISO(d));
-        if (s === "submitted") submitted++;
-        else if (s === "in_progress") inProg++;
-        else none++;
+    let submitted = 0;
+    let inProg = 0;
+    let none = 0;
+
+    for (const property of properties ?? []) {
+      for (const date of dayKeys) {
+        const metrics = getPropertyDayMetrics(property.id, date);
+        submitted += metrics.submitted;
+        inProg += metrics.in_progress;
+        none += metrics.none;
       }
     }
-    return { submitted, inProg, none, total: (staff?.length ?? 0) * days.length };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [staff, byUserDay, weekStart]);
 
-  const themeColor = activeProperty?.theme_color ?? null;
+    return { submitted, inProg, none };
+  }, [properties, staffByProperty, submissionsByPropertyUserDay, dayKeys]);
+
+  const isLoading = !properties || staffLoading || submissionsLoading;
 
   return (
-    <div style={themeStyle(themeColor)}>
-      {/* Property tabs */}
-      <div className="flex gap-2 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        {properties?.map((p) => {
-          const active = (activeId ?? properties[0]?.id) === p.id;
-          return (
-            <button
-              key={p.id}
-              onClick={() => setPropertyId(p.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium border-2 whitespace-nowrap flex items-center gap-2 transition-all`}
-              style={{
-                borderColor: active ? (p.theme_color ?? "var(--primary)") : "transparent",
-                backgroundColor: active ? `${p.theme_color ?? "var(--primary)"}15` : "transparent",
-                color: active ? (p.theme_color ?? "var(--primary)") : undefined,
-              }}
-            >
-              {p.logo_url && <img src={p.logo_url} className="h-4 w-4 rounded object-cover" alt="" />}
-              {p.name}
-            </button>
-          );
-        })}
-      </div>
-
+    <div>
       {/* Week controls + stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
         <Card className="md:col-span-1">
@@ -156,19 +172,23 @@ function BoardPage() {
       </div>
 
       {/* Grid */}
-      {!staff && <div className="grid place-items-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
-      {staff && staff.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No staff assigned to this property.</p>}
-      {staff && staff.length > 0 && (
+      {isLoading && (
+        <div className="grid place-items-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {!isLoading && properties && properties.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No properties available.</p>}
+      {!isLoading && properties && properties.length > 0 && (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="text-left px-3 py-2 font-semibold sticky left-0 bg-muted/40 z-10 min-w-40">Staff</th>
+                  <th className="text-left px-3 py-2 font-semibold sticky left-0 bg-muted/40 z-10 min-w-48">Property</th>
                   {days.map((d, i) => {
                     const isToday = fmtISO(d) === fmtISO(new Date());
                     return (
-                      <th key={i} className={`px-2 py-2 font-medium text-center min-w-16 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                      <th key={i} className={`px-2 py-2 font-medium text-center min-w-20 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
                         <div className="text-[10px] uppercase">{DAY_LABELS[i]}</div>
                         <div className="text-xs">{d.getDate()}</div>
                       </th>
@@ -177,27 +197,25 @@ function BoardPage() {
                 </tr>
               </thead>
               <tbody>
-                {staff.map((u: any) => (
-                  <tr key={u.id} className="border-b hover:bg-muted/30">
+                {properties.map((property) => (
+                  <tr key={property.id} className="border-b hover:bg-muted/30">
                     <td className="px-3 py-2 sticky left-0 bg-card z-10">
-                      <div className="font-medium text-sm truncate max-w-40">{u.full_name || u.email}</div>
-                      <div className="text-[10px] text-muted-foreground capitalize">{u.role}</div>
+                      <div className="font-medium text-sm truncate max-w-48">{property.name}</div>
                     </td>
-                    {days.map((d) => {
-                      const iso = fmtISO(d);
-                      const s = cellStatus(u.id, iso);
-                      const pill =
-                        s === "submitted" ? "bg-success text-success-foreground" :
-                        s === "in_progress" ? "bg-warning text-warning-foreground" :
-                        s === "incomplete" ? "bg-destructive text-destructive-foreground" :
-                        "bg-muted text-muted-foreground";
-                      const label = s === "submitted" ? "✓" : s === "in_progress" ? "•" : s === "incomplete" ? "✗" : "—";
+                    {dayKeys.map((dayKey) => {
+                      const metrics = getPropertyDayMetrics(property.id, dayKey);
+                      const pillClass =
+                        metrics.state === "green" ? "bg-success/15 text-success border border-success/30 hover:bg-success/20" :
+                        metrics.state === "amber" ? "bg-warning/20 text-warning-foreground border border-warning/30 hover:bg-warning/30" :
+                        metrics.state === "red" ? "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20" :
+                        "bg-muted text-muted-foreground border border-transparent hover:bg-muted/80";
+                      const label = metrics.total === 0 ? "—" : `${metrics.submitted}/${metrics.total}`;
                       return (
-                        <td key={iso} className="px-2 py-2 text-center">
+                        <td key={dayKey} className="px-2 py-2 text-center">
                           <button
-                            onClick={() => setDrawer({ userId: u.id, userName: u.full_name || u.email, date: iso })}
-                            className={`w-10 h-8 rounded-full font-bold text-xs ${pill} hover:opacity-80 active:scale-95 transition`}
-                            aria-label={`${u.full_name} ${iso}`}
+                            onClick={() => setPropertyDayDrawer({ propertyId: property.id, propertyName: property.name, date: dayKey })}
+                            className={`min-w-12 h-8 rounded-md px-2 py-1 text-xs font-semibold ${pillClass} active:scale-95 transition`}
+                            aria-label={`${property.name} ${dayKey}`}
                           >
                             {label}
                           </button>
@@ -212,12 +230,28 @@ function BoardPage() {
         </Card>
       )}
 
+      <PropertyDayDrawer
+        open={!!propertyDayDrawer}
+        onClose={() => setPropertyDayDrawer(null)}
+        propertyId={propertyDayDrawer?.propertyId ?? null}
+        propertyName={propertyDayDrawer?.propertyName ?? ""}
+        date={propertyDayDrawer?.date ?? null}
+        staff={propertyDayDrawer ? (staffByProperty.get(propertyDayDrawer.propertyId) ?? []) : []}
+        statusByUser={propertyDayDrawer ? Object.fromEntries(
+          (staffByProperty.get(propertyDayDrawer.propertyId) ?? []).map((user: any) => [user.id, cellStatus(propertyDayDrawer.propertyId, user.id, propertyDayDrawer.date)])
+        ) : {}}
+        onSelectStaff={(user: any) => {
+          setPropertyDayDrawer(null);
+          setDetailDrawer({ userId: user.id, userName: user.full_name || user.email, date: propertyDayDrawer?.date ?? "" });
+        }}
+      />
+
       <DayDetailDrawer
-        open={!!drawer}
-        onClose={() => setDrawer(null)}
-        userId={drawer?.userId ?? null}
-        userName={drawer?.userName ?? ""}
-        date={drawer?.date ?? null}
+        open={!!detailDrawer}
+        onClose={() => setDetailDrawer(null)}
+        userId={detailDrawer?.userId ?? null}
+        userName={detailDrawer?.userName ?? ""}
+        date={detailDrawer?.date ?? null}
       />
     </div>
   );
@@ -239,6 +273,50 @@ function StatCard({ label, value, tone, icon }: any) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function PropertyDayDrawer({ open, onClose, propertyId, propertyName, date, staff, statusByUser, onSelectStaff }: any) {
+  return (
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{propertyName}</SheetTitle>
+          <SheetDescription>{date && new Date(date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-2">
+          {staff && staff.length > 0 ? (
+            staff.map((user: any) => {
+              const userStatus = statusByUser?.[user.id] ?? "none";
+              const label = userStatus === "submitted" ? "Submitted" : userStatus === "in_progress" ? "In progress" : "No entry";
+              const badgeClass =
+                userStatus === "submitted" ? "bg-success text-success-foreground" :
+                userStatus === "in_progress" ? "bg-warning text-warning-foreground" :
+                "bg-muted text-muted-foreground";
+
+              return (
+                <button
+                  key={user.id}
+                  onClick={() => onSelectStaff(user)}
+                  className="w-full rounded-lg border p-3 text-left transition hover:bg-muted/40"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{user.full_name || user.email}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{user.role}</div>
+                    </div>
+                    <Badge className={badgeClass}>{label}</Badge>
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No staff assigned to this property.</p>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -309,9 +387,8 @@ function DayDetailDrawer({ open, onClose, userId, userName, date }: any) {
         <div className="mt-4 space-y-6">
           {data?.subs.map((s: any) => {
             const entries = data.entriesBySub[s.id] ?? [];
-            // group entries -> latest per item
             const latestByItem = new Map<string, any>();
-            for (const e of entries) latestByItem.set(e.item_id, e); // ordered asc -> keep last
+            for (const e of entries) latestByItem.set(e.item_id, e);
             const entriesGrouped: Record<string, any[]> = {};
             for (const [itemId, e] of latestByItem) {
               const item = data.itemsById[itemId];
@@ -370,8 +447,8 @@ function DayDetailDrawer({ open, onClose, userId, userName, date }: any) {
 
 function StatusDot({ status }: { status: string }) {
   const cls =
-    status === "done" ? "bg-success" :
-    status === "not_done" ? "bg-destructive" :
+    status === "done" || status === "submitted" ? "bg-success" :
+    status === "not_done" || status === "in_progress" ? "bg-warning" :
     "bg-muted-foreground";
   return <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${cls}`} />;
 }
