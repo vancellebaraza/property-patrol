@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useProfile } from "@/hooks/useAuth";
+import { useProfile, isAdminRole } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin")({
@@ -13,10 +13,10 @@ function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!loading && profile?.role !== "admin") navigate({ to: "/app" });
+    if (!loading && !isAdminRole(profile?.role)) navigate({ to: "/app" });
   }, [loading, profile, navigate]);
 
-  if (loading || profile?.role !== "admin") {
+  if (loading || !isAdminRole(profile?.role)) {
     return <Loader2 className="animate-spin" />;
   }
 

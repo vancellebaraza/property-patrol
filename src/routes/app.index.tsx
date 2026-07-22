@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/useAuth";
+import { useProfile, isAdminRole } from "@/hooks/useAuth";
 import { useProperty } from "@/hooks/useProperty";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ function ChecklistsHome() {
   const { profile } = useProfile();
   const navigate = useNavigate();
   useEffect(() => {
-    if (profile?.role === "admin") {
+    if (isAdminRole(profile?.role)) {
       navigate({ to: "/app/admin", replace: true });
     }
   }, [profile?.role, navigate]);
@@ -26,13 +26,13 @@ function ChecklistsHome() {
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["templates", profile?.property_id, profile?.role],
-    enabled: !!profile?.property_id && !!profile?.role,
+    enabled: !!profile?.property_id && !!profile?.role && !isAdminRole(profile.role),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("checklist_templates")
         .select("*")
         .eq("property_id", profile!.property_id!)
-        .eq("role_required", profile!.role!)
+        .eq("role_required", profile!.role! as "supervisor" | "caretaker" | "site_rep")
         .order("cadence")
         .order("name");
       if (error) throw error;

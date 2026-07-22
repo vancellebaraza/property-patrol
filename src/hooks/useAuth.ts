@@ -3,7 +3,39 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export type AppRole = "admin" | "supervisor" | "caretaker" | "site_rep";
+export type AppRole =
+  | "super_admin"
+  | "operations_admin"
+  | "finance_admin"
+  | "marketing_admin"
+  | "supervisor"
+  | "caretaker"
+  | "site_rep";
+
+const ADMIN_ROLES: AppRole[] = ["super_admin", "operations_admin", "finance_admin", "marketing_admin"];
+
+export function isAdminRole(role: AppRole | null | undefined): boolean {
+  return !!role && ADMIN_ROLES.includes(role);
+}
+
+export function isSuperAdminRole(role: AppRole | null | undefined): boolean {
+  return role === "super_admin";
+}
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  super_admin: "Super Admin",
+  operations_admin: "Operations Admin",
+  finance_admin: "Finance Admin",
+  marketing_admin: "Marketing Admin",
+  supervisor: "Supervisor",
+  caretaker: "Caretaker",
+  site_rep: "Site Rep",
+};
+
+export function formatRoleLabel(role: AppRole | null | undefined): string {
+  if (!role) return "—";
+  return ROLE_LABELS[role] ?? role;
+}
 
 export interface UserProfile {
   id: string;
@@ -18,7 +50,6 @@ export interface UserProfile {
 export function useSession() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
@@ -29,7 +60,6 @@ export function useSession() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
-
   return { user, loading };
 }
 

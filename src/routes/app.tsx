@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useProfile } from "@/hooks/useAuth";
+import { useProfile, isAdminRole } from "@/hooks/useAuth";
 import { useProperty, themeStyle } from "@/hooks/useProperty";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,11 +38,11 @@ function AppLayout() {
     );
   }
 
-  if (!profile || profile.role === null || !profile.active || (profile.role !== "admin" && profile.property_id === null)) {
+  if (!profile || profile.role === null || !profile.active || (!isAdminRole(profile.role) && profile.property_id === null)) {
     return <PendingApproval email={user.email ?? ""} name={profile?.full_name ?? ""} onSignOut={signOut} inactive={profile?.active === false} />;
   }
 
-  const isAdmin = profile.role === "admin";
+  const isAdmin = isAdminRole(profile.role);
   const themeColor = property?.theme_color ?? null;
 
   const staffNav = [
