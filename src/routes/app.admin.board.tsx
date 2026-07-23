@@ -103,9 +103,8 @@ function BoardPage() {
   function cellStatus(propertyId: string, userId: string, date: string): CellStatus {
     const dayMap = submissionsByPropertyUserDay.get(propertyId)?.get(userId);
     const subs = dayMap?.get(date);
-    if (!subs || subs.length === 0) return "none";
-    if (subs.some((s: any) => s.status === "submitted")) return "submitted";
-    return "in_progress";
+    if (subs && subs.some((s: any) => s.status === "submitted")) return "submitted";
+    return "none";
   }
 
   function getPropertyDayMetrics(propertyId: string, date: string): PropertyDayMetrics {
@@ -113,35 +112,31 @@ function BoardPage() {
     if (staff.length === 0) return { total: 0, submitted: 0, in_progress: 0, none: 0, state: "gray" };
 
     let submitted = 0;
-    let inProgress = 0;
     let none = 0;
 
     for (const user of staff) {
       const status = cellStatus(propertyId, user.id, date);
       if (status === "submitted") submitted++;
-      else if (status === "in_progress") inProgress++;
       else none++;
     }
 
-    const state = submitted === staff.length ? "green" : submitted > 0 || inProgress > 0 ? "amber" : "red";
-    return { total: staff.length, submitted, in_progress: inProgress, none, state };
+    const state = submitted === staff.length ? "green" : "red";
+    return { total: staff.length, submitted, in_progress: 0, none, state };
   }
 
   const summary = useMemo(() => {
     let submitted = 0;
-    let inProg = 0;
     let none = 0;
 
     for (const property of properties ?? []) {
       for (const date of dayKeys) {
         const metrics = getPropertyDayMetrics(property.id, date);
         submitted += metrics.submitted;
-        inProg += metrics.in_progress;
         none += metrics.none;
       }
     }
 
-    return { submitted, inProg, none };
+    return { submitted, none };
   }, [properties, staffByProperty, submissionsByPropertyUserDay, dayKeys]);
 
   const isLoading = !properties || staffLoading || submissionsLoading;
@@ -166,9 +161,8 @@ function BoardPage() {
             </button>
           </CardContent>
         </Card>
-        <StatCard label="Submitted" value={summary.submitted} tone="success" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <StatCard label="In progress" value={summary.inProg} tone="warning" icon={<Circle className="h-4 w-4" />} />
-        <StatCard label="No entry" value={summary.none} tone="destructive" icon={<XCircle className="h-4 w-4" />} />
+        <StatCard label="Done" value={summary.submitted} tone="success" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <StatCard label="Not done" value={summary.none} tone="destructive" icon={<XCircle className="h-4 w-4" />} />
       </div>
 
       {/* Grid */}
@@ -206,8 +200,7 @@ function BoardPage() {
                       const metrics = getPropertyDayMetrics(property.id, dayKey);
                       const pillClass =
                         metrics.state === "green" ? "bg-success/15 text-success border border-success/30 hover:bg-success/20" :
-                        metrics.state === "amber" ? "bg-warning/20 text-warning-foreground border border-warning/30 hover:bg-warning/30" :
-                        metrics.state === "red" ? "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20" :
+                        metrics.state === "red" ? "bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/20" :
                         "bg-muted text-muted-foreground border border-transparent hover:bg-muted/80";
                       const label = metrics.total === 0 ? "—" : `${metrics.submitted}/${metrics.total}`;
                       return (
@@ -289,11 +282,10 @@ function PropertyDayDrawer({ open, onClose, propertyId, propertyName, date, staf
           {staff && staff.length > 0 ? (
             staff.map((user: any) => {
               const userStatus = statusByUser?.[user.id] ?? "none";
-              const label = userStatus === "submitted" ? "Submitted" : userStatus === "in_progress" ? "In progress" : "No entry";
+              const label = userStatus === "submitted" ? "Done" : "Not done";
               const badgeClass =
                 userStatus === "submitted" ? "bg-success text-success-foreground" :
-                userStatus === "in_progress" ? "bg-warning text-warning-foreground" :
-                "bg-muted text-muted-foreground";
+                "bg-destructive text-destructive-foreground";
 
               return (
                 <button
@@ -403,9 +395,9 @@ function DayDetailDrawer({ open, onClose, userId, userName, date }: any) {
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.checklist_templates?.cadence} · {s.checklist_templates?.format?.replace("_", " ")}</div>
                   </div>
                   {s.status === "submitted" ? (
-                    <Badge className="bg-success text-success-foreground">Submitted {s.submitted_at && new Date(s.submitted_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Badge>
+                    <Badge className="bg-success text-success-foreground">Done {s.submitted_at && new Date(s.submitted_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Badge>
                   ) : (
-                    <Badge className="bg-warning text-warning-foreground">In progress</Badge>
+                    <Badge className="bg-destructive text-destructive-foreground">Not done</Badge>
                   )}
                 </div>
                 {Object.entries(entriesGrouped).map(([catId, list]) => (
@@ -446,9 +438,6 @@ function DayDetailDrawer({ open, onClose, userId, userName, date }: any) {
 }
 
 function StatusDot({ status }: { status: string }) {
-  const cls =
-    status === "done" || status === "submitted" ? "bg-success" :
-    status === "not_done" || status === "in_progress" ? "bg-warning" :
-    "bg-muted-foreground";
-  return <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${cls}`} />;
+  const cls = status === "done" || status === "submitted" ? "bg-success" : "bg-destructive";
+  return <div className={`h-2.5 w-2.5 rounded-full mt-1 shrink-0 ${cls}`} />;
 }
