@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { useProfile, canChangeRoles } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/users")({
