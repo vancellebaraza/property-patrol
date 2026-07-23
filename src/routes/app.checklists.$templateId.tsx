@@ -91,7 +91,7 @@ function FillChecklist() {
         .insert({
           template_id: templateId,
           user_id: user.id,
-          property_id: profile.property_id!,
+          property_id: template!.property_id,
           period_start: period.start,
           period_end: period.end,
         })
@@ -168,7 +168,7 @@ function FillChecklist() {
       )}
 
       {isFaultLog ? (
-        <FaultLogFormat submissionId={submission?.id} propertyId={profile?.property_id ?? null} userId={user?.id ?? null} disabled={isSubmitted} />
+        <FaultLogFormat submissionId={submission?.id} propertyId={template?.property_id ?? null} userId={user?.id ?? null} disabled={isSubmitted} />
       ) : (
         <div className="space-y-4">
           {categories?.map((cat: any) => (

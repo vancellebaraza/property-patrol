@@ -22,16 +22,27 @@ function ChecklistsHome() {
       navigate({ to: "/app/admin", replace: true });
     }
   }, [profile?.role, navigate]);
-  const { data: property } = useProperty(profile?.property_id);
+  // RLS already scopes this to every property the user can act on (one for caretaker/site_rep,
+  // possibly several for a supervisor) — no manual property_id filter needed here.
+  const { data: myProperties } = useQuery({
+    queryKey: ["my-properties", profile?.id],
+    enabled: !!profile?.id && !isAdminRole(profile?.role),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("properties").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const property = myProperties?.[0];
+  const propertyName = (id: string) => myProperties?.find((p: any) => p.id === id)?.name ?? "";
 
   const { data: templates, isLoading } = useQuery({
-    queryKey: ["templates", profile?.property_id, profile?.role],
-    enabled: !!profile?.property_id && !!profile?.role && !isAdminRole(profile.role),
+    queryKey: ["templates", profile?.id, profile?.role],
+    enabled: !!profile?.id && !!profile?.role && !isAdminRole(profile.role),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("checklist_templates")
         .select("*")
-        .eq("property_id", profile!.property_id!)
         .eq("role_required", profile!.role! as "supervisor" | "caretaker" | "site_rep")
         .order("cadence")
         .order("name");
@@ -63,10 +74,9 @@ function ChecklistsHome() {
   const savePlan = useMutation({
     mutationFn: async () => {
       if (!profile) throw new Error("Profile not loaded");
-      if (!profile.property_id) throw new Error("Property not assigned");
       const { error } = await supabase.from("daily_plans").insert({
         user_id: profile.id,
-        property_id: profile.property_id,
+        property_id: profile.property_id ?? myProperties?.[0]?.id ?? null,
         plan_date: todayISO,
         plan_text: planText,
         status: "planned",
@@ -97,7 +107,13 @@ function ChecklistsHome() {
         <div className="text-xs text-muted-foreground">{today}</div>
         <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">Today's checklists</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {property ? <>Assigned to your <span className="capitalize">{profile?.role}</span> role at <span className="font-medium text-foreground">{property.name}</span>.</> : "Loading…"}
+          {myProperties && myProperties.length > 0 ? (
+            myProperties.length === 1 ? (
+              <>Assigned to your <span className="capitalize">{profile?.role}</span> role at <span className="font-medium text-foreground">{myProperties[0].name}</span>.</>
+            ) : (
+              <>Assigned to your <span className="capitalize">{profile?.role}</span> role across <span className="font-medium text-foreground">{myProperties.length} properties</span>.</>
+            )
+          ) : "Loading…"}
         </p>
       </div>
 
@@ -160,6 +176,9 @@ function ChecklistsHome() {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold truncate">{t.name}</div>
                     <div className="mt-1 flex gap-1.5 flex-wrap">
+                      {myProperties && myProperties.length > 1 && (
+                        <Badge className="text-[10px]">{propertyName(t.property_id)}</Badge>
+                      )}
                       <Badge variant="secondary" className="capitalize text-[10px]">{t.cadence}</Badge>
                       <Badge variant="outline" className="text-[10px]">{t.format.replace("_", " ")}</Badge>
                     </div>
