@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useProfile, canChangeRoles } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/users")({
   component: UsersPage,
 });
 
-const ROLES = ["admin", "supervisor", "caretaker", "site_rep"] as const;
+const ROLES = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "supervisor", "caretaker", "site_rep"] as const;
 
 function UsersPage() {
   const qc = useQueryClient();
+  const { profile: currentProfile } = useProfile();
+  const allowRoleEdit = canChangeRoles(currentProfile?.role);
   const { data: users } = useQuery({
     queryKey: ["all-users"],
     queryFn: async () => {
@@ -66,12 +69,16 @@ function UsersPage() {
                     <div className="font-medium text-sm">{u.full_name || "(no name)"}</div>
                     <div className="text-xs text-muted-foreground">{u.email}</div>
                   </div>
-                  <Select value={u.role ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}>
-                    <SelectTrigger className="w-36 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {allowRoleEdit ? (
+                    <Select value={u.role ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}>
+                      <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="capitalize">{(u.role ?? "—").replace("_", " ")}</Badge>
+                  )}
                   <Select value={u.property_id ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { property_id: v } })}>
                     <SelectTrigger className="w-44 h-8"><SelectValue placeholder="Property" /></SelectTrigger>
                     <SelectContent>

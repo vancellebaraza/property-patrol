@@ -12,7 +12,8 @@ export type AppRole =
   | "caretaker"
   | "site_rep";
 
-const ADMIN_ROLES: AppRole[] = ["super_admin", "operations_admin", "finance_admin", "marketing_admin"];
+// Roles that get the full /app/admin dashboard (all tabs).
+const ADMIN_ROLES: AppRole[] = ["super_admin", "operations_admin"];
 
 export function isAdminRole(role: AppRole | null | undefined): boolean {
   return !!role && ADMIN_ROLES.includes(role);
@@ -20,6 +21,17 @@ export function isAdminRole(role: AppRole | null | undefined): boolean {
 
 export function isSuperAdminRole(role: AppRole | null | undefined): boolean {
   return role === "super_admin";
+}
+
+// Only super_admin may change anyone's role — mirrors the DB trigger, UI-side.
+export function canChangeRoles(role: AppRole | null | undefined): boolean {
+  return role === "super_admin";
+}
+
+// Roles that write their own daily plan and appear in the To-Do staff grid,
+// but are not super_admin (super_admin only views, never writes).
+export function writesOwnPlan(role: AppRole | null | undefined): boolean {
+  return isAdminRole(role) && role !== "super_admin";
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {

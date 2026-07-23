@@ -1,3 +1,6 @@
+import { useProfile, writesOwnPlan } from "@/hooks/useAuth";
+import { useDailyPlan } from "@/hooks/useDailyPlan";
+import { Textarea } from "@/components/ui/textarea";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -67,6 +70,9 @@ type StaffMember = {
 
 export default function AdminTodosPage() {
   const { data: properties } = useAllProperties();
+  const { profile } = useProfile();
+  const showOwnPlan = writesOwnPlan(profile?.role);
+  const { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, markDone } = useDailyPlan(profile);
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<DailyPlanRow | null>(null);
 
@@ -82,7 +88,7 @@ export default function AdminTodosPage() {
         .from("user_profiles")
         .select("id, full_name, email, role, property_id")
         .eq("active", true)
-        .neq("role", "admin")
+        .neq("role", "super_admin")
         .order("full_name");
       if (error) throw error;
       return (data ?? []) as StaffMember[];
@@ -142,6 +148,35 @@ export default function AdminTodosPage() {
           <div className="text-sm text-muted-foreground">Showing {filteredStaff.length} staff</div>
         </div>
       </div>
+
+      {showOwnPlan && (
+        <Card className="mb-5 sm:mb-8">
+          <CardContent className="space-y-3 py-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Your plan for today</div>
+            {todayPlanLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : todayPlan ? (
+              <div className="space-y-3">
+                <div className="rounded-md border border-input bg-background p-4 text-sm whitespace-pre-wrap">{todayPlan.plan_text}</div>
+                {todayPlan.status === "planned" ? (
+                  <Button type="button" onClick={() => markDone.mutate()} disabled={markDone.isPending}>
+                    Mark as done
+                  </Button>
+                ) : (
+                  <Badge className="bg-success text-success-foreground">Done</Badge>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Textarea value={planText} onChange={(e) => setPlanText(e.target.value)} placeholder="Write your plan for today…" rows={4} />
+                <Button onClick={() => savePlan.mutate()} disabled={!planText.trim() || savePlan.isPending}>
+                  Save plan
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading && (
         <div className="grid place-items-center py-12">
