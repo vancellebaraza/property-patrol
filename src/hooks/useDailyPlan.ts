@@ -43,10 +43,9 @@ export function useDailyPlan(profile: UserProfile | null) {
   const savePlan = useMutation({
     mutationFn: async () => {
       if (!profile) throw new Error("Profile not loaded");
-      if (!profile.property_id) throw new Error("No property assigned to this account");
       const { error } = await supabase.from("daily_plans").insert({
         user_id: profile.id,
-        property_id: profile.property_id,
+        property_id: profile.property_id ?? null,
         plan_date: dateKey,
         plan_text: planText,
         status: "planned",

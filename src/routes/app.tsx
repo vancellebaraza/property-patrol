@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useProfile, isAdminRole } from "@/hooks/useAuth";
+import { useProfile, isAdminRole, isSuperAdminRole } from "@/hooks/useAuth";
 import { useProperty, themeStyle } from "@/hooks/useProperty";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -69,9 +69,11 @@ function AppLayout() {
               </div>
             )}
             <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground leading-none">Property</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground leading-none">
+                {isAdminRole(profile.role) && !profile.property_id ? "Access" : "Property"}
+              </div>
               <div className="truncate font-bold text-sm sm:text-base leading-tight">
-                {property?.name ?? "OpsCheck"}
+                {property?.name ?? (isAdminRole(profile.role) ? "All Properties" : "OpsCheck")}
               </div>
             </div>
           </Link>

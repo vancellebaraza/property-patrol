@@ -11,7 +11,7 @@ export const Route = createFileRoute("/app/admin/")({
   component: PendingApprovals,
 });
 
-const ROLES = ["admin", "supervisor", "caretaker", "site_rep"] as const;
+const ROLES = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "supervisor", "caretaker", "site_rep"] as const;
 
 function PendingApprovals() {
   const qc = useQueryClient();
@@ -22,7 +22,7 @@ function PendingApprovals() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .or("role.is.null,and(property_id.is.null,role.neq.admin)")
+        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -51,6 +51,7 @@ function PendingApprovals() {
 function PendingRow({ user, properties, onSaved }: any) {
   const [role, setRole] = useState<string>(user.role ?? "");
   const [propertyId, setPropertyId] = useState<string>(user.property_id ?? "");
+  const isFullAdmin = role === "super_admin" || role === "operations_admin";
 
   const save = useMutation({
     mutationFn: async () => {
@@ -80,13 +81,18 @@ function PendingRow({ user, properties, onSaved }: any) {
             {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={propertyId} onValueChange={setPropertyId}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Property" /></SelectTrigger>
+        <Select value={propertyId} onValueChange={setPropertyId} disabled={isFullAdmin}>
+          <SelectTrigger className="w-48"><SelectValue placeholder={isFullAdmin ? "All properties" : "Property"} /></SelectTrigger>
           <SelectContent>
             {properties.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={() => save.mutate()} disabled={!role || (role !== "admin" && !propertyId) || save.isPending}>Assign</Button>
+        <Button
+          onClick={() => save.mutate()}
+          disabled={!role || (!isFullAdmin && !propertyId) || save.isPending}
+        >
+          Assign
+        </Button>
       </CardContent>
     </Card>
   );

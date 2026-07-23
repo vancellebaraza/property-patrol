@@ -55,7 +55,7 @@ function UsersPage() {
     grouped.get(key)!.push(u);
   }
 
-  const propName = (id: string) => id === "unassigned" ? "Unassigned" : properties?.find((p: any) => p.id === id)?.name ?? "Unknown";
+  const propName = (id: string) => id === "unassigned" ? "Full Admins (all properties)" : properties?.find((p: any) => p.id === id)?.name ?? "Unknown";
 
   return (
     <div className="space-y-6">
@@ -80,12 +80,16 @@ function UsersPage() {
                   ) : (
                     <Badge variant="outline" className="capitalize">{(u.role ?? "—").replace("_", " ")}</Badge>
                   )}
-                  <Select value={u.property_id ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { property_id: v } })}>
-                    <SelectTrigger className="w-44 h-8"><SelectValue placeholder="Property" /></SelectTrigger>
-                    <SelectContent>
-                      {properties?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  {u.role === "super_admin" || u.role === "operations_admin" ? (
+                    <Badge variant="secondary" className="w-44 justify-center h-8">All properties</Badge>
+                  ) : (
+                    <Select value={u.property_id ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { property_id: v } })}>
+                      <SelectTrigger className="w-44 h-8"><SelectValue placeholder="Property" /></SelectTrigger>
+                      <SelectContent>
+                        {properties?.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <div className="flex items-center gap-2 text-xs">
                     Active
                     <Switch checked={u.active} onCheckedChange={(v) => update.mutate({ id: u.id, patch: { active: v } })} />

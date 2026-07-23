@@ -53,7 +53,7 @@ function BoardPage() {
         .select("id, full_name, email, role, property_id")
         .eq("active", true)
         .not("role", "is", null)
-        .neq("role", "admin")
+        .neq("role", "super_admin")
         .order("full_name");
       if (error) throw error;
       return (data ?? []) as any[];
