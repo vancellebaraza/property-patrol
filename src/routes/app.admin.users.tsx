@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useProfile, canChangeRoles } from "@/hooks/useAuth";
+import { useProfile, canManageRoles, canEditThisRole, assignableRoles } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/users")({
   component: UsersPage,
@@ -20,7 +20,7 @@ const ROLES = ["super_admin", "operations_admin", "finance_admin", "marketing_ad
 function UsersPage() {
   const qc = useQueryClient();
   const { profile: currentProfile } = useProfile();
-  const allowRoleEdit = canChangeRoles(currentProfile?.role);
+  const allowRoleEdit = canManageRoles(currentProfile?.role);
   const { data: users } = useQuery({
     queryKey: ["all-users"],
     queryFn: async () => {
@@ -117,11 +117,11 @@ function UsersPage() {
                     <div className="font-medium text-sm">{u.full_name || "(no name)"}</div>
                     <div className="text-xs text-muted-foreground">{u.email}</div>
                   </div>
-                  {allowRoleEdit ? (
+                  {allowRoleEdit && canEditThisRole(currentProfile?.role, u.role) ? (
                     <Select value={u.role ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}>
                       <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
                       <SelectContent>
-                        {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
+                        {assignableRoles(currentProfile?.role).map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   ) : (
