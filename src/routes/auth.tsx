@@ -22,6 +22,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const exitTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -51,6 +54,17 @@ function AuthPage() {
     beginExit();
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Check your email for a reset link");
+  }
+
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -78,10 +92,24 @@ function AuthPage() {
         </Link>
         <Card className={`auth-card${isExiting ? " auth-exit" : ""}`}>
           <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>Sign in or create your account to continue.</CardDescription>
+            <CardTitle>{showForgot ? "Reset password" : "Welcome"}</CardTitle>
+            <CardDescription>
+              {showForgot ? "Enter your email and we'll send you a reset link." : "Sign in or create your account to continue."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
+            {showForgot ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <Label htmlFor="fp-email">Email</Label>
+                  <Input id="fp-email" type="email" required value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={resetLoading}>Send reset link</Button>
+                <button type="button" onClick={() => setShowForgot(false)} className="text-sm text-muted-foreground underline w-full text-center">
+                  Back to sign in
+                </button>
+              </form>
+            ) : (
             <Tabs defaultValue="signin">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -98,6 +126,9 @@ function AuthPage() {
                     <Input id="si-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>Sign in</Button>
+                  <button type="button" onClick={() => setShowForgot(true)} className="text-sm text-muted-foreground underline w-full text-center block">
+                    Forgot password?
+                  </button>
                 </form>
               </TabsContent>
               <TabsContent value="signup">
@@ -118,6 +149,7 @@ function AuthPage() {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
