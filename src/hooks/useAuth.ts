@@ -23,6 +23,12 @@ export function isSuperAdminRole(role: AppRole | null | undefined): boolean {
   return role === "super_admin";
 }
 
+// finance_admin and marketing_admin are never tied to a single property either —
+// they just aren't full admins with dashboard access like super_admin/operations_admin.
+export function hasNoSingleProperty(role: AppRole | null | undefined): boolean {
+  return role === "finance_admin" || role === "marketing_admin";
+}
+
 // super_admin and operations_admin can open the role editor at all — mirrors the DB trigger, UI-side.
 export function canManageRoles(role: AppRole | null | undefined): boolean {
   return role === "super_admin" || role === "operations_admin";

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useProfile, isAdminRole, isSuperAdminRole } from "@/hooks/useAuth";
+import { useProfile, isAdminRole, isSuperAdminRole, hasNoSingleProperty } from "@/hooks/useAuth";
 import { useProperty, themeStyle } from "@/hooks/useProperty";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ function AppLayout() {
     );
   }
 
-  if (!profile || profile.role === null || !profile.active || (!isAdminRole(profile.role) && profile.property_id === null)) {
+  if (!profile || profile.role === null || !profile.active || (!isAdminRole(profile.role) && !hasNoSingleProperty(profile.role) && profile.property_id === null)) {
     return <PendingApproval email={user.email ?? ""} name={profile?.full_name ?? ""} onSignOut={signOut} inactive={profile?.active === false} />;
   }
 
@@ -70,7 +70,7 @@ function AppLayout() {
             )}
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground leading-none">
-                {isAdminRole(profile.role) && !profile.property_id ? "Access" : "Property"}
+                {(isAdminRole(profile.role) || hasNoSingleProperty(profile.role)) && !profile.property_id ? "Access" : "Property"}
               </div>
               <div className="truncate font-bold text-sm sm:text-base leading-tight">
                 {property?.name ?? (isAdminRole(profile.role) ? "All Properties" : "OpsCheck")}

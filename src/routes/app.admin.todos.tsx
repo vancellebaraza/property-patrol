@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin/todos")({
   component: AdminTodosPage,
@@ -76,7 +76,7 @@ export default function AdminTodosPage() {
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<DailyPlanRow | null>(null);
 
-  const weekStart = startOfWeek(new Date());
+  const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const weekEnd = addDays(weekStart, 6);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const dayKeys = useMemo(() => days.map((d) => fmtISO(d)), [days]);
@@ -129,9 +129,19 @@ export default function AdminTodosPage() {
     <div>
       <div className="mb-5 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-xs text-muted-foreground">Week of {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <button onClick={() => setWeekStart(addDays(weekStart, -7))} className="p-1 rounded hover:bg-muted" aria-label="Previous week">
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <span>
+              Week of {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – {weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+            <button onClick={() => setWeekStart(addDays(weekStart, 7))} className="p-1 rounded hover:bg-muted" aria-label="Next week">
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">Daily To-Dos</h1>
-          <p className="text-muted-foreground text-sm mt-1">Review staff daily plans and status for the current week.</p>
+          <p className="text-muted-foreground text-sm mt-1">Review staff daily plans and status for the selected week.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select value={selectedProperty} onValueChange={setSelectedProperty}>

@@ -22,7 +22,7 @@ function PendingApprovals() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin))")
+        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin,finance_admin,marketing_admin))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;

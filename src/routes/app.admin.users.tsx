@@ -118,7 +118,10 @@ function UsersPage() {
                     <div className="text-xs text-muted-foreground">{u.email}</div>
                   </div>
                   {allowRoleEdit && canEditThisRole(currentProfile?.role, u.role) ? (
-                    <Select value={u.role ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}>
+                    <Select value={u.role ?? ""} onValueChange={(v) => {
+                      const noProperty = ["super_admin", "operations_admin", "finance_admin", "marketing_admin"].includes(v);
+                      update.mutate({ id: u.id, patch: noProperty ? { role: v, property_id: null } : { role: v } });
+                    }}>
                       <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
                       <SelectContent>
                         {assignableRoles(currentProfile?.role).map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
