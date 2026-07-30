@@ -35,6 +35,7 @@ function ChecklistsHome() {
   });
   const property = myProperties?.[0];
   const propertyName = (id: string) => myProperties?.find((p: any) => p.id === id)?.name ?? "";
+  const todoOnly = profile?.role === "finance_admin" || profile?.role === "marketing_admin";
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["templates", profile?.id, profile?.role],
@@ -105,9 +106,11 @@ function ChecklistsHome() {
     <div>
       <div className="mb-5 sm:mb-8">
         <div className="text-xs text-muted-foreground">{today}</div>
-        <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">Today's checklists</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">{todoOnly ? "Your daily to-do" : "Today's checklists"}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {myProperties && myProperties.length > 0 ? (
+          {todoOnly ? (
+            <>Write your plan for the day below.</>
+          ) : myProperties && myProperties.length > 0 ? (
             myProperties.length === 1 ? (
               <>Assigned to your <span className="capitalize">{profile?.role}</span> role at <span className="font-medium text-foreground">{myProperties[0].name}</span>.</>
             ) : (
@@ -155,7 +158,7 @@ function ChecklistsHome() {
         </CardContent>
       </Card>
 
-      {templates && templates.length === 0 && (
+      {!todoOnly && templates && templates.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground text-sm">
             No checklists are assigned to your role yet. Your admin needs to create templates for you.
@@ -164,7 +167,7 @@ function ChecklistsHome() {
       )}
 
       <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-        {templates?.map((t) => {
+        {!todoOnly && templates?.map((t) => {
           const Icon = t.format === "day_grid" ? CalendarDays : t.format === "fault_log" ? Wrench : ClipboardList;
           return (
             <Link key={t.id} to="/app/checklists/$templateId" params={{ templateId: t.id }}>

@@ -129,6 +129,8 @@ function UsersPage() {
                   )}
                   {u.role === "super_admin" || u.role === "operations_admin" ? (
                     <Badge variant="secondary" className="w-44 justify-center h-8">All properties</Badge>
+                  ) : u.role === "finance_admin" || u.role === "marketing_admin" ? (
+                    <Badge variant="secondary" className="w-44 justify-center h-8">No property</Badge>
                   ) : u.role === "supervisor" ? (
                     (() => {
                       const extras = (supervisorExtra ?? []).filter((r: any) => r.user_id === u.id).map((r: any) => r.property_id);
