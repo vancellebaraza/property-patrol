@@ -35,7 +35,7 @@ function ChecklistsHome() {
   });
   const property = myProperties?.[0];
   const propertyName = (id: string) => myProperties?.find((p: any) => p.id === id)?.name ?? "";
-  const todoOnly = profile?.role === "finance_admin" || profile?.role === "marketing_admin";
+  const todoOnly = ["finance_admin", "marketing_admin", "finance_staff", "marketing_staff"].includes(profile?.role ?? "");
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["templates", profile?.id, profile?.role],

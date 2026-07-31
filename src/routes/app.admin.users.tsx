@@ -95,8 +95,40 @@ function UsersPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const financeUsers = (users ?? []).filter((u: any) => u.role === "finance_admin" || u.role === "finance_staff");
+  const marketingUsers = (users ?? []).filter((u: any) => u.role === "marketing_admin" || u.role === "marketing_staff");
+  const opsUsers = (users ?? []).filter((u: any) => !financeUsers.includes(u) && !marketingUsers.includes(u));
+
+  function UserRow({ u }: { u: any }) {
+    return (
+      <Card>
+        <CardContent className="py-3 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-40">
+            <div className="font-medium text-sm">{u.full_name || "(no name)"}</div>
+            <div className="text-xs text-muted-foreground">{u.email}</div>
+          </div>
+          {allowRoleEdit && canEditThisRole(currentProfile?.role, u.role) ? (
+            <Select value={u.role ?? ""} onValueChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}>
+              <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
+              <SelectContent>
+                {assignableRoles(currentProfile?.role).map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge variant="outline" className="capitalize">{(u.role ?? "—").replace("_", " ")}</Badge>
+          )}
+          <Badge variant="secondary" className="w-44 justify-center h-8">No property</Badge>
+          <div className="flex items-center gap-2 text-xs">
+            Active
+            <Switch checked={u.active} onCheckedChange={(v) => update.mutate({ id: u.id, patch: { active: v } })} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const grouped = new Map<string, any[]>();
-  for (const u of users ?? []) {
+  for (const u of opsUsers) {
     const key = u.property_id ?? "unassigned";
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(u);
@@ -119,7 +151,7 @@ function UsersPage() {
                   </div>
                   {allowRoleEdit && canEditThisRole(currentProfile?.role, u.role) ? (
                     <Select value={u.role ?? ""} onValueChange={(v) => {
-                      const noProperty = ["super_admin", "operations_admin", "finance_admin", "marketing_admin"].includes(v);
+                      const noProperty = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "finance_staff", "marketing_staff"].includes(v);
                       update.mutate({ id: u.id, patch: noProperty ? { role: v, property_id: null } : { role: v } });
                     }}>
                       <SelectTrigger className="w-40 h-8"><SelectValue placeholder="Role" /></SelectTrigger>
@@ -132,7 +164,7 @@ function UsersPage() {
                   )}
                   {u.role === "super_admin" || u.role === "operations_admin" ? (
                     <Badge variant="secondary" className="w-44 justify-center h-8">All properties</Badge>
-                  ) : u.role === "finance_admin" || u.role === "marketing_admin" ? (
+                  ) : u.role === "finance_admin" || u.role === "marketing_admin" || u.role === "finance_staff" || u.role === "marketing_staff" ? (
                     <Badge variant="secondary" className="w-44 justify-center h-8">No property</Badge>
                   ) : u.role === "supervisor" ? (
                     (() => {
@@ -179,6 +211,24 @@ function UsersPage() {
           </div>
         </div>
       ))}
+
+      {financeUsers.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-2">Finance</h2>
+          <div className="space-y-2">
+            {financeUsers.map((u: any) => <UserRow key={u.id} u={u} />)}
+          </div>
+        </div>
+      )}
+
+      {marketingUsers.length > 0 && (
+        <div>
+          <h2 className="font-semibold mb-2">Marketing</h2>
+          <div className="space-y-2">
+            {marketingUsers.map((u: any) => <UserRow key={u.id} u={u} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

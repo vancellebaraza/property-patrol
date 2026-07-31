@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ClipboardCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -22,6 +23,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [department, setDepartment] = useState("operations");
   const [showForgot, setShowForgot] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
@@ -73,7 +75,7 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/app`,
-        data: { full_name: fullName },
+        data: { full_name: fullName, department },
       },
     });
     setLoading(false);
@@ -144,6 +146,17 @@ function AuthPage() {
                   <div>
                     <Label htmlFor="su-password">Password</Label>
                     <Input id="su-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="su-department">Department</Label>
+                    <Select value={department} onValueChange={setDepartment}>
+                      <SelectTrigger id="su-department"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="operations">Operations</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>Create account</Button>
                 </form>

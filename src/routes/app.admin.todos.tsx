@@ -1,4 +1,4 @@
-import { useProfile, writesOwnPlan } from "@/hooks/useAuth";
+import { useProfile, writesOwnPlan, roleDepartment } from "@/hooks/useAuth";
 import { useDailyPlan } from "@/hooks/useDailyPlan";
 import { Textarea } from "@/components/ui/textarea";
 import { createFileRoute } from "@tanstack/react-router";
@@ -74,6 +74,8 @@ export default function AdminTodosPage() {
   const showOwnPlan = writesOwnPlan(profile?.role);
   const { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, markDone } = useDailyPlan(profile);
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const isSuperAdmin = profile?.role === "super_admin";
   const [selectedPlan, setSelectedPlan] = useState<DailyPlanRow | null>(null);
 
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
@@ -86,7 +88,7 @@ export default function AdminTodosPage() {
     queryFn: async (): Promise<StaffMember[]> => {
       const { data, error } = await supabase
         .from("user_profiles")
-        .select("id, full_name, email, role, property_id")
+        .select("id, full_name, email, role, property_id, department")
         .eq("active", true)
         .neq("role", "super_admin")
         .order("full_name");
@@ -109,8 +111,13 @@ export default function AdminTodosPage() {
   });
 
   const filteredStaff = useMemo(
-    () => (staff ?? []).filter((user) => selectedProperty === "all" || user.property_id === selectedProperty),
-    [staff, selectedProperty],
+    () =>
+      (staff ?? []).filter((user) => {
+        const propOk = selectedProperty === "all" || user.property_id === selectedProperty;
+        const deptOk = selectedDepartment === "all" || roleDepartment(user.role as any) === selectedDepartment;
+        return propOk && deptOk;
+      }),
+    [staff, selectedProperty, selectedDepartment],
   );
 
   const planMap = useMemo(() => {
@@ -144,6 +151,17 @@ export default function AdminTodosPage() {
           <p className="text-muted-foreground text-sm mt-1">Review staff daily plans and status for the selected week.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {isSuperAdmin && (
+            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <SelectTrigger className="w-44 h-9"><SelectValue placeholder="All departments" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All departments</SelectItem>
+                <SelectItem value="operations">Operations</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="marketing">Marketing</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Select value={selectedProperty} onValueChange={setSelectedProperty}>
             <SelectTrigger className="w-56 h-9"><SelectValue placeholder="All properties" /></SelectTrigger>
             <SelectContent>

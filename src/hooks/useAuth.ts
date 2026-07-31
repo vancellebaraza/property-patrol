@@ -8,12 +8,21 @@ export type AppRole =
   | "operations_admin"
   | "finance_admin"
   | "marketing_admin"
+  | "finance_staff"
+  | "marketing_staff"
   | "supervisor"
   | "caretaker"
   | "site_rep";
 
-// Roles that get the full /app/admin dashboard (all tabs).
-const ADMIN_ROLES: AppRole[] = ["super_admin", "operations_admin"];
+// Roles that can reach the /app/admin dashboard at all.
+// Super Admin and Operations Admin get every tab; Finance/Marketing Admin get a
+// department-scoped subset (Pending, To-Do, Users) — see the tabs list in app.admin.tsx.
+const ADMIN_ROLES: AppRole[] = ["super_admin", "operations_admin", "finance_admin", "marketing_admin"];
+
+// Only these two see every property and get the full 7-tab dashboard.
+export function isFullPropertyAdmin(role: AppRole | null | undefined): boolean {
+  return role === "super_admin" || role === "operations_admin";
+}
 
 export function isAdminRole(role: AppRole | null | undefined): boolean {
   return !!role && ADMIN_ROLES.includes(role);
@@ -26,7 +35,15 @@ export function isSuperAdminRole(role: AppRole | null | undefined): boolean {
 // finance_admin and marketing_admin are never tied to a single property either —
 // they just aren't full admins with dashboard access like super_admin/operations_admin.
 export function hasNoSingleProperty(role: AppRole | null | undefined): boolean {
-  return role === "finance_admin" || role === "marketing_admin";
+  return role === "finance_admin" || role === "marketing_admin" || role === "finance_staff" || role === "marketing_staff";
+}
+
+// Which department a role belongs to. super_admin sits above all departments (null).
+export function roleDepartment(role: AppRole | null | undefined): "operations" | "finance" | "marketing" | null {
+  if (role === "operations_admin" || role === "supervisor" || role === "caretaker" || role === "site_rep") return "operations";
+  if (role === "finance_admin" || role === "finance_staff") return "finance";
+  if (role === "marketing_admin" || role === "marketing_staff") return "marketing";
+  return null;
 }
 
 // super_admin and operations_admin can open the role editor at all — mirrors the DB trigger, UI-side.
@@ -44,8 +61,12 @@ export function canEditThisRole(actingRole: AppRole | null | undefined, targetCu
 
 // Roles selectable in the dropdown for a given actor — operations_admin can never promote to super_admin.
 export function assignableRoles(actingRole: AppRole | null | undefined): AppRole[] {
-  const all: AppRole[] = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "supervisor", "caretaker", "site_rep"];
-  return actingRole === "super_admin" ? all : all.filter((r) => r !== "super_admin");
+  const all: AppRole[] = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "finance_staff", "marketing_staff", "supervisor", "caretaker", "site_rep"];
+  if (actingRole === "super_admin") return all;
+  if (actingRole === "finance_admin") return ["finance_admin", "finance_staff"];
+  if (actingRole === "marketing_admin") return ["marketing_admin", "marketing_staff"];
+  // operations_admin keeps its existing, unrestricted-except-super_admin behavior — unchanged.
+  return all.filter((r) => r !== "super_admin");
 }
 
 // Roles that write their own daily plan and appear in the To-Do staff grid,
