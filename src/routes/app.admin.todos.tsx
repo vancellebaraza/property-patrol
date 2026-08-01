@@ -117,7 +117,7 @@ export default function AdminTodosPage() {
       (staff ?? []).filter((user) => {
         const propOk = selectedProperty === "all" || user.property_id === selectedProperty;
         const deptOk = selectedDepartment === "all" || roleDepartment(user.role as any) === selectedDepartment;
-        const tierOk = selectedTier === "all" || ADMIN_TIER_ROLES.includes(user.role as any);
+        const tierOk = selectedTier === "admins" ? ADMIN_TIER_ROLES.includes(user.role as any) : !ADMIN_TIER_ROLES.includes(user.role as any);
         return propOk && deptOk && tierOk;
       }),
     [staff, selectedProperty, selectedDepartment, selectedTier],
@@ -158,7 +158,7 @@ export default function AdminTodosPage() {
             <Select value={selectedTier} onValueChange={setSelectedTier}>
               <SelectTrigger className="w-40 h-9"><SelectValue placeholder="All staff" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All staff</SelectItem>
+                <SelectItem value="all">Staff</SelectItem>
                 <SelectItem value="admins">Admins only</SelectItem>
               </SelectContent>
             </Select>
