@@ -256,7 +256,7 @@ export type Database = {
           id: string
           plan_date: string
           plan_text: string
-          property_id: string
+          property_id: string | null
           status: string
           updated_at: string
           user_id: string
@@ -266,7 +266,7 @@ export type Database = {
           id?: string
           plan_date: string
           plan_text: string
-          property_id: string
+          property_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -276,7 +276,7 @@ export type Database = {
           id?: string
           plan_date?: string
           plan_text?: string
-          property_id?: string
+          property_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -376,10 +376,44 @@ export type Database = {
         }
         Relationships: []
       }
+      supervisor_properties: {
+        Row: {
+          created_at: string
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervisor_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_properties_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           active: boolean
           created_at: string
+          department: Database["public"]["Enums"]["department"] | null
           email: string
           full_name: string
           id: string
@@ -389,6 +423,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          department?: Database["public"]["Enums"]["department"] | null
           email: string
           full_name?: string
           id: string
@@ -398,6 +433,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          department?: Database["public"]["Enums"]["department"] | null
           email?: string
           full_name?: string
           id?: string
@@ -420,6 +456,11 @@ export type Database = {
     }
     Functions: {
       admin_property_id: { Args: { uid: string }; Returns: string }
+      get_user_department: {
+        Args: { uid: string }
+        Returns: Database["public"]["Enums"]["department"]
+      }
+      get_user_properties: { Args: { uid: string }; Returns: string[] }
       get_user_property: { Args: { _uid: string }; Returns: string }
       get_user_role: {
         Args: { _uid: string }
@@ -427,6 +468,7 @@ export type Database = {
       }
       is_admin: { Args: { _uid: string }; Returns: boolean }
       is_any_admin: { Args: { uid: string }; Returns: boolean }
+      is_full_admin: { Args: { uid: string }; Returns: boolean }
       is_super_admin: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {
@@ -439,8 +481,11 @@ export type Database = {
         | "operations_admin"
         | "finance_admin"
         | "marketing_admin"
+        | "finance_staff"
+        | "marketing_staff"
       checklist_cadence: "daily" | "weekly" | "monthly"
       checklist_format: "status_comment" | "day_grid" | "fault_log"
+      department: "operations" | "finance" | "marketing"
       entry_status: "done" | "not_done" | "na"
       fault_status: "reported" | "broken" | "repaired"
       submission_status: "in_progress" | "submitted"
@@ -583,9 +628,12 @@ export const Constants = {
         "operations_admin",
         "finance_admin",
         "marketing_admin",
+        "finance_staff",
+        "marketing_staff",
       ],
       checklist_cadence: ["daily", "weekly", "monthly"],
       checklist_format: ["status_comment", "day_grid", "fault_log"],
+      department: ["operations", "finance", "marketing"],
       entry_status: ["done", "not_done", "na"],
       fault_status: ["reported", "broken", "repaired"],
       submission_status: ["in_progress", "submitted"],

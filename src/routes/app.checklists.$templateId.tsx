@@ -25,7 +25,7 @@ function periodForCadence(cadence: string): { start: string; end: string } {
     const day = start.getDay();
     const mondayOffset = (day + 6) % 7;
     start.setDate(start.getDate() - mondayOffset);
-    end.setDate(start.getDate() + 6);
+    end.setDate(start.getDate() + 5); // Saturday — no Sunday work
   } else if (cadence === "monthly") {
     start.setDate(1);
     end.setMonth(start.getMonth() + 1);
@@ -318,7 +318,6 @@ function StatusCommentRow({ item, subItems, submissionId, entries, disabled }: a
         <div className="flex gap-1.5 shrink-0">
           <BigStatusBtn active={status === "done"} onClick={() => setStatus("done")} disabled={disabled} tone="success" label="Done"><Check className="h-5 w-5" /></BigStatusBtn>
           <BigStatusBtn active={status === "not_done"} onClick={() => setStatus("not_done")} disabled={disabled} tone="destructive" label="Not done"><X className="h-5 w-5" /></BigStatusBtn>
-          <BigStatusBtn active={status === "na"} onClick={() => setStatus("na")} disabled={disabled} tone="muted" label="N/A"><Minus className="h-5 w-5" /></BigStatusBtn>
         </div>
       </div>
       <Textarea

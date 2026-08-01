@@ -75,12 +75,14 @@ export default function AdminTodosPage() {
   const { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, markDone } = useDailyPlan(profile);
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const [selectedTier, setSelectedTier] = useState<string>("all");
   const isSuperAdmin = profile?.role === "super_admin";
+  const ADMIN_TIER_ROLES = ["operations_admin", "finance_admin", "marketing_admin"];
   const [selectedPlan, setSelectedPlan] = useState<DailyPlanRow | null>(null);
 
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
-  const weekEnd = addDays(weekStart, 6);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const weekEnd = addDays(weekStart, 5); // Saturday
+  const days = useMemo(() => Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)), [weekStart]); // Mon–Sat, no Sunday work
   const dayKeys = useMemo(() => days.map((d) => fmtISO(d)), [days]);
 
   const { data: staff, isLoading: staffLoading } = useQuery({
@@ -115,9 +117,10 @@ export default function AdminTodosPage() {
       (staff ?? []).filter((user) => {
         const propOk = selectedProperty === "all" || user.property_id === selectedProperty;
         const deptOk = selectedDepartment === "all" || roleDepartment(user.role as any) === selectedDepartment;
-        return propOk && deptOk;
+        const tierOk = selectedTier === "all" || ADMIN_TIER_ROLES.includes(user.role as any);
+        return propOk && deptOk && tierOk;
       }),
-    [staff, selectedProperty, selectedDepartment],
+    [staff, selectedProperty, selectedDepartment, selectedTier],
   );
 
   const planMap = useMemo(() => {
@@ -151,6 +154,15 @@ export default function AdminTodosPage() {
           <p className="text-muted-foreground text-sm mt-1">Review staff daily plans and status for the selected week.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {isSuperAdmin && (
+            <Select value={selectedTier} onValueChange={setSelectedTier}>
+              <SelectTrigger className="w-40 h-9"><SelectValue placeholder="All staff" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All staff</SelectItem>
+                <SelectItem value="admins">Admins only</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           {isSuperAdmin && (
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
               <SelectTrigger className="w-44 h-9"><SelectValue placeholder="All departments" /></SelectTrigger>

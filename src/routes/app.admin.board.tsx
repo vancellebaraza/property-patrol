@@ -41,9 +41,9 @@ function BoardPage() {
   const [propertyDayDrawer, setPropertyDayDrawer] = useState<{ propertyId: string; propertyName: string; date: string } | null>(null);
   const [detailDrawer, setDetailDrawer] = useState<{ userId: string; userName: string; date: string } | null>(null);
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const days = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)); // Mon–Sat, no Sunday work
   const dayKeys = useMemo(() => days.map((d) => fmtISO(d)), [weekStart]);
-  const weekEnd = addDays(weekStart, 6);
+  const weekEnd = addDays(weekStart, 5); // Saturday
 
   const { data: staffData, isLoading: staffLoading } = useQuery({
     queryKey: ["staff-all-properties"],
