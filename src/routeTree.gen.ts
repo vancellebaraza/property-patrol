@@ -13,11 +13,13 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AppFaultsRouteImport } from './routes/app.faults'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
 import { Route as AppChecklistsTemplateIdRouteImport } from './routes/app.checklists.$templateId'
 import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
+import { Route as AppAdminTodosRouteImport } from './routes/app.admin.todos'
 import { Route as AppAdminTemplatesRouteImport } from './routes/app.admin.templates'
 import { Route as AppAdminPropertiesRouteImport } from './routes/app.admin.properties'
 import { Route as AppAdminFaultsRouteImport } from './routes/app.admin.faults'
@@ -42,6 +44,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AppFaultsRoute = AppFaultsRouteImport.update({
   id: '/faults',
@@ -68,6 +75,11 @@ const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminTodosRoute = AppAdminTodosRouteImport.update({
+  id: '/todos',
+  path: '/todos',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminTemplatesRoute = AppAdminTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -92,27 +104,31 @@ const AppAdminBoardRoute = AppAdminBoardRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/faults': typeof AppFaultsRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/app/faults': typeof AppFaultsRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin': typeof AppAdminIndexRoute
@@ -121,14 +137,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/app/admin': typeof AppAdminRouteWithChildren
   '/app/faults': typeof AppFaultsRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/board': typeof AppAdminBoardRoute
   '/app/admin/faults': typeof AppAdminFaultsRoute
   '/app/admin/properties': typeof AppAdminPropertiesRoute
   '/app/admin/templates': typeof AppAdminTemplatesRoute
+  '/app/admin/todos': typeof AppAdminTodosRoute
   '/app/admin/users': typeof AppAdminUsersRoute
   '/app/checklists/$templateId': typeof AppChecklistsTemplateIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
@@ -141,11 +159,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/admin'
     | '/app/faults'
+    | '/auth/reset-password'
     | '/app/'
     | '/app/admin/board'
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin/'
@@ -154,11 +174,13 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app/faults'
+    | '/auth/reset-password'
     | '/app'
     | '/app/admin/board'
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin'
@@ -169,11 +191,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/admin'
     | '/app/faults'
+    | '/auth/reset-password'
     | '/app/'
     | '/app/admin/board'
     | '/app/admin/faults'
     | '/app/admin/properties'
     | '/app/admin/templates'
+    | '/app/admin/todos'
     | '/app/admin/users'
     | '/app/checklists/$templateId'
     | '/app/admin/'
@@ -182,7 +206,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -214,6 +238,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/app/faults': {
       id: '/app/faults'
@@ -248,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/app/admin/users'
       preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/admin/todos': {
+      id: '/app/admin/todos'
+      path: '/todos'
+      fullPath: '/app/admin/todos'
+      preLoaderRoute: typeof AppAdminTodosRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/app/admin/templates': {
@@ -286,6 +324,7 @@ interface AppAdminRouteChildren {
   AppAdminFaultsRoute: typeof AppAdminFaultsRoute
   AppAdminPropertiesRoute: typeof AppAdminPropertiesRoute
   AppAdminTemplatesRoute: typeof AppAdminTemplatesRoute
+  AppAdminTodosRoute: typeof AppAdminTodosRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
@@ -295,6 +334,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminFaultsRoute: AppAdminFaultsRoute,
   AppAdminPropertiesRoute: AppAdminPropertiesRoute,
   AppAdminTemplatesRoute: AppAdminTemplatesRoute,
+  AppAdminTodosRoute: AppAdminTodosRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
@@ -319,10 +359,20 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AuthRouteChildren {
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

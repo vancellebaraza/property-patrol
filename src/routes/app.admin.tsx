@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useProfile } from "@/hooks/useAuth";
+import { useProfile, isAdminRole, isFullPropertyAdmin } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin")({
@@ -13,21 +13,28 @@ function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!loading && profile?.role !== "admin") navigate({ to: "/app" });
+    if (!loading && !isAdminRole(profile?.role)) navigate({ to: "/app" });
   }, [loading, profile, navigate]);
 
-  if (loading || profile?.role !== "admin") {
+  if (loading || !isAdminRole(profile?.role)) {
     return <Loader2 className="animate-spin" />;
   }
 
-  const tabs = [
-    { to: "/app/admin", label: "Pending", exact: true },
-    { to: "/app/admin/board", label: "Board" },
-    { to: "/app/admin/faults", label: "Faults" },
-    { to: "/app/admin/users", label: "Users" },
-    { to: "/app/admin/properties", label: "Properties" },
-    { to: "/app/admin/templates", label: "Templates" },
-  ];
+  const tabs = isFullPropertyAdmin(profile?.role)
+    ? [
+        { to: "/app/admin", label: "Pending", exact: true },
+        { to: "/app/admin/board", label: "Board" },
+        { to: "/app/admin/todos", label: "To-Do" },
+        { to: "/app/admin/faults", label: "Faults" },
+        { to: "/app/admin/users", label: "Users" },
+        { to: "/app/admin/properties", label: "Properties" },
+        { to: "/app/admin/templates", label: "Templates" },
+      ]
+    : [
+        { to: "/app/admin", label: "Pending", exact: true },
+        { to: "/app/admin/todos", label: "To-Do" },
+        { to: "/app/admin/users", label: "Users" },
+      ];
 
   return (
     <div>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Check, X, Minus, Loader2, ChevronDown, ChevronRight, ArrowLeft, Plus, Wrench } from "lucide-react";
 
-type EntryStatus = "done" | "not_done" | "na";
+type EntryStatus = "done" | "not_done";
 
 export const Route = createFileRoute("/app/checklists/$templateId")({
   component: FillChecklist,
@@ -25,7 +25,7 @@ function periodForCadence(cadence: string): { start: string; end: string } {
     const day = start.getDay();
     const mondayOffset = (day + 6) % 7;
     start.setDate(start.getDate() - mondayOffset);
-    end.setDate(start.getDate() + 6);
+    end.setDate(start.getDate() + 5); // Saturday — no Sunday work
   } else if (cadence === "monthly") {
     start.setDate(1);
     end.setMonth(start.getMonth() + 1);
@@ -91,7 +91,7 @@ function FillChecklist() {
         .insert({
           template_id: templateId,
           user_id: user.id,
-          property_id: profile.property_id!,
+          property_id: template!.property_id,
           period_start: period.start,
           period_end: period.end,
         })
@@ -168,7 +168,7 @@ function FillChecklist() {
       )}
 
       {isFaultLog ? (
-        <FaultLogFormat submissionId={submission?.id} propertyId={profile?.property_id ?? null} userId={user?.id ?? null} disabled={isSubmitted} />
+        <FaultLogFormat submissionId={submission?.id} propertyId={template?.property_id ?? null} userId={user?.id ?? null} disabled={isSubmitted} />
       ) : (
         <div className="space-y-4">
           {categories?.map((cat: any) => (
@@ -318,7 +318,6 @@ function StatusCommentRow({ item, subItems, submissionId, entries, disabled }: a
         <div className="flex gap-1.5 shrink-0">
           <BigStatusBtn active={status === "done"} onClick={() => setStatus("done")} disabled={disabled} tone="success" label="Done"><Check className="h-5 w-5" /></BigStatusBtn>
           <BigStatusBtn active={status === "not_done"} onClick={() => setStatus("not_done")} disabled={disabled} tone="destructive" label="Not done"><X className="h-5 w-5" /></BigStatusBtn>
-          <BigStatusBtn active={status === "na"} onClick={() => setStatus("na")} disabled={disabled} tone="muted" label="N/A"><Minus className="h-5 w-5" /></BigStatusBtn>
         </div>
       </div>
       <Textarea
@@ -396,7 +395,7 @@ function DayGridCells({ itemId, submissionId, entries, disabled }: any) {
   function cycle(dow: number) {
     if (disabled) return;
     const cur = latestByDay.get(dow) ?? null;
-    const next: EntryStatus = cur === null ? "done" : cur === "done" ? "not_done" : cur === "not_done" ? "na" : "done";
+    const next: EntryStatus = cur === "done" ? "not_done" : "done";
     save.mutate({ itemId, status: next, dayOfWeek: dow, flashId: `${itemId}-${dow}` });
   }
 
@@ -410,7 +409,6 @@ function DayGridCells({ itemId, submissionId, entries, disabled }: any) {
         const bg =
           status === "done" ? "bg-success text-success-foreground border-success" :
           status === "not_done" ? "bg-destructive text-destructive-foreground border-destructive" :
-          status === "na" ? "bg-muted-foreground/20 border-muted-foreground/30" :
           "bg-background border-border hover:bg-muted";
         return (
           <button
@@ -421,7 +419,7 @@ function DayGridCells({ itemId, submissionId, entries, disabled }: any) {
           >
             <div className="uppercase opacity-80">{label}</div>
             <div className="text-[10px] mt-0.5">
-              {status === "done" ? "✓" : status === "not_done" ? "✗" : status === "na" ? "—" : ""}
+              {status === "done" ? "✓" : status === "not_done" ? "✗" : ""}
             </div>
             {flashing && (
               <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-success grid place-items-center animate-in fade-in zoom-in">

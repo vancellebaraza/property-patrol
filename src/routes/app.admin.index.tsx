@@ -6,15 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useProfile, assignableRoles, hasNoSingleProperty } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/")({
   component: PendingApprovals,
 });
 
-const ROLES = ["admin", "supervisor", "caretaker", "site_rep"] as const;
+const ROLES = ["super_admin", "operations_admin", "finance_admin", "marketing_admin", "supervisor", "caretaker", "site_rep"] as const;
 
 function PendingApprovals() {
   const qc = useQueryClient();
+  const { profile: currentProfile } = useProfile();
 
   const { data: pending } = useQuery({
     queryKey: ["pending-users"],
@@ -22,7 +24,7 @@ function PendingApprovals() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .or("role.is.null,and(property_id.is.null,role.neq.admin)")
+        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin,finance_admin,marketing_admin))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -42,15 +44,19 @@ function PendingApprovals() {
     <div className="space-y-4">
       {pending?.length === 0 && <p className="text-sm text-muted-foreground">No pending users.</p>}
       {pending?.map((u: any) => (
-        <PendingRow key={u.id} user={u} properties={properties ?? []} onSaved={() => qc.invalidateQueries({ queryKey: ["pending-users"] })} />
+        <PendingRow key={u.id} user={u} properties={properties ?? []} actingRole={currentProfile?.role} onSaved={() => qc.invalidateQueries({ queryKey: ["pending-users"] })} />
       ))}
     </div>
   );
 }
 
-function PendingRow({ user, properties, onSaved }: any) {
+function PendingRow({ user, properties, actingRole, onSaved }: any) {
   const [role, setRole] = useState<string>(user.role ?? "");
   const [propertyId, setPropertyId] = useState<string>(user.property_id ?? "");
+  const isFullAdmin = role === "super_admin" || role === "operations_admin";
+  const isNoProperty = hasNoSingleProperty(role as any);
+  const skipsProperty = isFullAdmin || isNoProperty;
+  const roleOptions = assignableRoles(actingRole);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -77,16 +83,21 @@ function PendingRow({ user, properties, onSaved }: any) {
         <Select value={role} onValueChange={setRole}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
-            {ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
+            {roleOptions.map((r) => <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={propertyId} onValueChange={setPropertyId}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Property" /></SelectTrigger>
+        <Select value={propertyId} onValueChange={setPropertyId} disabled={skipsProperty}>
+          <SelectTrigger className="w-48"><SelectValue placeholder={isFullAdmin ? "All properties" : isNoProperty ? "No property" : "Property"} /></SelectTrigger>
           <SelectContent>
             {properties.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={() => save.mutate()} disabled={!role || (role !== "admin" && !propertyId) || save.isPending}>Assign</Button>
+        <Button
+          onClick={() => save.mutate()}
+          disabled={!role || (!skipsProperty && !propertyId) || save.isPending}
+        >
+          Assign
+        </Button>
       </CardContent>
     </Card>
   );
