@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useProfile, canManageRoles, canEditThisRole, assignableRoles } from "@/hooks/useAuth";
+import { useProfile, canManageRoles, canEditThisRole, assignableRoles, roleDepartment } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/users")({
   component: UsersPage,
@@ -48,7 +48,8 @@ function UsersPage() {
 
   const update = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
-      const { error } = await supabase.from("user_profiles").update(patch).eq("id", id);
+      const finalPatch = "role" in patch ? { ...patch, department: roleDepartment(patch.role) } : patch;
+      const { error } = await supabase.from("user_profiles").update(finalPatch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useProfile, assignableRoles, hasNoSingleProperty } from "@/hooks/useAuth";
+import { useProfile, assignableRoles, hasNoSingleProperty, canManageRoles, roleDepartment } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/admin/")({
   component: PendingApprovals,
@@ -17,6 +17,7 @@ const ROLES = ["super_admin", "operations_admin", "finance_admin", "marketing_ad
 function PendingApprovals() {
   const qc = useQueryClient();
   const { profile: currentProfile } = useProfile();
+  const allowRoleEdit = canManageRoles(currentProfile?.role);
 
   const { data: pending } = useQuery({
     queryKey: ["pending-users"],
@@ -24,7 +25,7 @@ function PendingApprovals() {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin,finance_admin,marketing_admin))")
+        .or("role.is.null,and(property_id.is.null,role.not.in.(super_admin,operations_admin,finance_admin,marketing_admin,finance_staff,marketing_staff))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -44,13 +45,13 @@ function PendingApprovals() {
     <div className="space-y-4">
       {pending?.length === 0 && <p className="text-sm text-muted-foreground">No pending users.</p>}
       {pending?.map((u: any) => (
-        <PendingRow key={u.id} user={u} properties={properties ?? []} actingRole={currentProfile?.role} onSaved={() => qc.invalidateQueries({ queryKey: ["pending-users"] })} />
+        <PendingRow key={u.id} user={u} properties={properties ?? []} actingRole={currentProfile?.role} allowRoleEdit={allowRoleEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["pending-users"] })} />
       ))}
     </div>
   );
 }
 
-function PendingRow({ user, properties, actingRole, onSaved }: any) {
+function PendingRow({ user, properties, actingRole, allowRoleEdit, onSaved }: any) {
   const [role, setRole] = useState<string>(user.role ?? "");
   const [propertyId, setPropertyId] = useState<string>(user.property_id ?? "");
   const isFullAdmin = role === "super_admin" || role === "operations_admin";
@@ -62,7 +63,11 @@ function PendingRow({ user, properties, actingRole, onSaved }: any) {
     mutationFn: async () => {
       const { error } = await supabase
         .from("user_profiles")
-        .update({ role: role as any, property_id: propertyId || null })
+        .update({
+          role: role as any,
+          property_id: propertyId || null,
+          department: roleDepartment(role as any),
+        })
         .eq("id", user.id);
       if (error) throw error;
     },
@@ -72,6 +77,24 @@ function PendingRow({ user, properties, actingRole, onSaved }: any) {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  // finance_admin and marketing_admin can see who's pending in their department, but
+  // only super_admin / operations_admin may approve and assign a role — mirrors the
+  // "scoped admin update profiles" + enforce_role_change_super_admin_only trigger in
+  // Supabase, so they never hit the raw "Only super_admin and operations_admin..." error.
+  if (!allowRoleEdit) {
+    return (
+      <Card>
+        <CardContent className="py-4 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-52">
+            <div className="font-medium">{user.full_name || "(no name)"}</div>
+            <div className="text-sm text-muted-foreground">{user.email}</div>
+          </div>
+          <div className="text-xs text-muted-foreground italic">Awaiting Super Admin / Operations Admin approval</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

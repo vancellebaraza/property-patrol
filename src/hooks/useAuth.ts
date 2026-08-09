@@ -48,7 +48,7 @@ export function roleDepartment(role: AppRole | null | undefined): "operations" |
 
 // super_admin and operations_admin can open the role editor at all — mirrors the DB trigger, UI-side.
 export function canManageRoles(role: AppRole | null | undefined): boolean {
-  return role === "super_admin" || role === "operations_admin";
+  return role === "super_admin" || role === "operations_admin" || role === "finance_admin" || role === "marketing_admin";
 }
 
 // Whether `actingRole` may change THIS SPECIFIC row's role, given the row's current role.
@@ -56,6 +56,8 @@ export function canManageRoles(role: AppRole | null | undefined): boolean {
 export function canEditThisRole(actingRole: AppRole | null | undefined, targetCurrentRole: AppRole | null | undefined): boolean {
   if (actingRole === "super_admin") return true;
   if (actingRole === "operations_admin") return targetCurrentRole !== "super_admin";
+  if (actingRole === "finance_admin") return targetCurrentRole == null || targetCurrentRole === "finance_admin" || targetCurrentRole === "finance_staff";
+  if (actingRole === "marketing_admin") return targetCurrentRole == null || targetCurrentRole === "marketing_admin" || targetCurrentRole === "marketing_staff";
   return false;
 }
 
@@ -70,9 +72,10 @@ export function assignableRoles(actingRole: AppRole | null | undefined): AppRole
 }
 
 // Roles that write their own daily plan and appear in the To-Do staff grid,
-// but are not super_admin (super_admin only views, never writes).
+// but are not super_admin (super_admin only views, never writes) and not
+// marketing_admin (excused from the daily plan entirely — views only, same as super_admin).
 export function writesOwnPlan(role: AppRole | null | undefined): boolean {
-  return isAdminRole(role) && role !== "super_admin";
+  return isAdminRole(role) && role !== "super_admin" && role !== "marketing_admin";
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {
