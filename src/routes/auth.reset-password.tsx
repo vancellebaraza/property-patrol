@@ -19,7 +19,6 @@ type LinkStatus = "checking" | "ready" | "error";
 // Supabase appends either a hash fragment (#access_token=...&type=recovery)
 // on success, or (#error=access_denied&error_code=otp_expired&error_description=...)
 // when the link is expired, already used, or the redirect URL wasn't allow-listed.
-// No longer the primary reset path (moved to OTP in auth.tsx), kept correct as a fallback.
 function parseRecoveryParams() {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const query = new URLSearchParams(window.location.search);
@@ -83,12 +82,45 @@ function ResetPasswordPage() {
     e.preventDefault();
     if (password.length < 8) return toast.error("Password must be at least 8 characters");
     if (password !== confirm) return toast.error("Passwords don't match");
+
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Password updated");
-    navigate({ to: "/app" });
+
+    // The "ready" state was decided when the page loaded. The recovery session it's
+    // based on can go stale by the time the user actually submits (short OTP expiry,
+    // clock skew, an email link-scanner spending the one-time token, etc). Re-check
+    // right before writing, so we can hand back a precise reason instead of forwarding
+    // whatever Supabase says without changing it.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setLoading(false);
+      toast.error("Your reset session expired. Requesting a fresh link…");
+      setStatus("error");
+      setLinkError("This reset link is no longer valid.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      setLoading(false);
+      if (error) {
+        const msg = error.message || "";
+        if (/different from the old password/i.test(msg)) {
+          toast.error("Pick a password you haven't used before on this account.");
+        } else if (/session|jwt|token/i.test(msg)) {
+          toast.error("Your reset link expired mid-update. Please request a new one.");
+          setStatus("error");
+          setLinkError("This reset link is no longer valid.");
+        } else {
+          toast.error(msg || "Couldn't update the password. Please try again.");
+        }
+        return;
+      }
+      toast.success("Password updated");
+      navigate({ to: "/app" });
+    } catch (err) {
+      setLoading(false);
+      toast.error(err instanceof Error ? err.message : "Network error — please try again.");
+    }
   }
 
   return (
