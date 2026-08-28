@@ -3,10 +3,12 @@ import { useEffect } from "react";
 import { useProfile, isAdminRole, isSuperAdminRole, hasNoSingleProperty, isFullPropertyAdmin } from "@/hooks/useAuth";
 import { useProperty, themeStyle } from "@/hooks/useProperty";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ClipboardCheck, LogOut, Loader2, ShieldAlert, Settings, ClipboardList, Wrench, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -17,7 +19,20 @@ function AppLayout() {
   const qc = useQueryClient();
   const { user, profile, loading } = useProfile();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data: property } = useProperty(profile?.property_id);
+
+  // Multi-property supervisors: while viewing a specific checklist, the header
+  // should reflect THAT checklist's property, not the account's home property.
+  const checklistTemplateId = pathname.match(/^\/app\/checklists\/([^/]+)/)?.[1] ?? null;
+  const { data: activeTemplate } = useQuery({
+    queryKey: ["header-template-property", checklistTemplateId],
+    enabled: !!checklistTemplateId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("checklist_templates").select("property_id").eq("id", checklistTemplateId!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const { data: property } = useProperty(activeTemplate?.property_id ?? profile?.property_id);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });

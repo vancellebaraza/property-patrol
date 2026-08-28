@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { UserProfile } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export type DailyPlanStatus = "planned" | "done";
 
@@ -61,11 +62,38 @@ export function useDailyPlan(profile: UserProfile | null) {
   const markDone = useMutation({
     mutationFn: async () => {
       if (!todayPlan) throw new Error("No plan to mark done");
-      const { error } = await supabase.from("daily_plans").update({ status: "done" }).eq("id", todayPlan.id);
+      const { error } = await supabase
+        .from("daily_plans")
+        .update({ status: "done" })
+        .eq("id", todayPlan.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, dateKey] }),
   });
 
-  return { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, markDone };
+  const updatePlan = useMutation({
+    mutationFn: async () => {
+      if (!profile || !todayPlan) throw new Error("Plan not loaded");
+      const { data, error } = await supabase
+        .from("daily_plans")
+        .update({ plan_text: planText })
+        .eq("id", todayPlan.id)
+        .eq("user_id", profile.id)
+        .eq("plan_date", dateKey)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data)
+        throw new Error("Your plan could not be updated. Check the daily_plans update policy.");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, dateKey] });
+      setPlanText("");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Your plan could not be updated.");
+    },
+  });
+
+  return { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, updatePlan, markDone };
 }

@@ -8,10 +8,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllProperties } from "@/hooks/useProperty";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin/todos")({
   component: AdminTodosPage,
@@ -72,7 +84,9 @@ export default function AdminTodosPage() {
   const { data: properties } = useAllProperties();
   const { profile } = useProfile();
   const showOwnPlan = writesOwnPlan(profile?.role);
-  const { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, markDone } = useDailyPlan(profile);
+  const { todayPlan, todayPlanLoading, planText, setPlanText, savePlan, updatePlan, markDone } =
+    useDailyPlan(profile);
+  const [editingOwnPlan, setEditingOwnPlan] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedTier, setSelectedTier] = useState<string>("all");
@@ -82,7 +96,10 @@ export default function AdminTodosPage() {
 
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const weekEnd = addDays(weekStart, 5); // Saturday
-  const days = useMemo(() => Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)), [weekStart]); // Mon–Sat, no Sunday work
+  const days = useMemo(
+    () => Array.from({ length: 6 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  ); // Mon–Sat, no Sunday work
   const dayKeys = useMemo(() => days.map((d) => fmtISO(d)), [days]);
 
   const { data: staff, isLoading: staffLoading } = useQuery({
@@ -116,8 +133,12 @@ export default function AdminTodosPage() {
     () =>
       (staff ?? []).filter((user) => {
         const propOk = selectedProperty === "all" || user.property_id === selectedProperty;
-        const deptOk = selectedDepartment === "all" || roleDepartment(user.role as any) === selectedDepartment;
-        const tierOk = selectedTier === "admins" ? ADMIN_TIER_ROLES.includes(user.role as any) : !ADMIN_TIER_ROLES.includes(user.role as any);
+        const deptOk =
+          selectedDepartment === "all" || roleDepartment(user.role as any) === selectedDepartment;
+        const tierOk =
+          selectedTier === "admins"
+            ? ADMIN_TIER_ROLES.includes(user.role as any)
+            : !ADMIN_TIER_ROLES.includes(user.role as any);
         return propOk && deptOk && tierOk;
       }),
     [staff, selectedProperty, selectedDepartment, selectedTier],
@@ -140,23 +161,36 @@ export default function AdminTodosPage() {
       <div className="mb-5 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <button onClick={() => setWeekStart(addDays(weekStart, -7))} className="p-1 rounded hover:bg-muted" aria-label="Previous week">
+            <button
+              onClick={() => setWeekStart(addDays(weekStart, -7))}
+              className="p-1 rounded hover:bg-muted"
+              aria-label="Previous week"
+            >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
             <span>
-              Week of {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – {weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              Week of {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })}{" "}
+              – {weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
-            <button onClick={() => setWeekStart(addDays(weekStart, 7))} className="p-1 rounded hover:bg-muted" aria-label="Next week">
+            <button
+              onClick={() => setWeekStart(addDays(weekStart, 7))}
+              className="p-1 rounded hover:bg-muted"
+              aria-label="Next week"
+            >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">Daily To-Dos</h1>
-          <p className="text-muted-foreground text-sm mt-1">Review staff daily plans and status for the selected week.</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Review staff daily plans and status for the selected week.
+          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {isSuperAdmin && (
             <Select value={selectedTier} onValueChange={setSelectedTier}>
-              <SelectTrigger className="w-40 h-9"><SelectValue placeholder="All staff" /></SelectTrigger>
+              <SelectTrigger className="w-40 h-9">
+                <SelectValue placeholder="All staff" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Staff</SelectItem>
                 <SelectItem value="admins">Admins only</SelectItem>
@@ -165,7 +199,9 @@ export default function AdminTodosPage() {
           )}
           {isSuperAdmin && (
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-44 h-9"><SelectValue placeholder="All departments" /></SelectTrigger>
+              <SelectTrigger className="w-44 h-9">
+                <SelectValue placeholder="All departments" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All departments</SelectItem>
                 <SelectItem value="operations">Operations</SelectItem>
@@ -175,7 +211,9 @@ export default function AdminTodosPage() {
             </Select>
           )}
           <Select value={selectedProperty} onValueChange={setSelectedProperty}>
-            <SelectTrigger className="w-56 h-9"><SelectValue placeholder="All properties" /></SelectTrigger>
+            <SelectTrigger className="w-56 h-9">
+              <SelectValue placeholder="All properties" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All properties</SelectItem>
               {properties?.map((property) => (
@@ -192,24 +230,85 @@ export default function AdminTodosPage() {
       {showOwnPlan && (
         <Card className="mb-5 sm:mb-8">
           <CardContent className="space-y-3 py-4">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Your plan for today</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">
+              Your plan for today
+            </div>
             {todayPlanLoading ? (
               <p className="text-sm text-muted-foreground">Loading…</p>
             ) : todayPlan ? (
-              <div className="space-y-3">
-                <div className="rounded-md border border-input bg-background p-4 text-sm whitespace-pre-wrap">{todayPlan.plan_text}</div>
-                {todayPlan.status === "planned" ? (
-                  <Button type="button" onClick={() => markDone.mutate()} disabled={markDone.isPending}>
-                    Mark as done
-                  </Button>
-                ) : (
-                  <Badge className="bg-success text-success-foreground">Done</Badge>
-                )}
-              </div>
+              editingOwnPlan ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={planText}
+                    onChange={(e) => setPlanText(e.target.value)}
+                    rows={4}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() =>
+                        updatePlan.mutate(undefined, {
+                          onSuccess: () => setEditingOwnPlan(false),
+                        })
+                      }
+                      disabled={!planText.trim() || updatePlan.isPending}
+                    >
+                      Save changes
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingOwnPlan(false);
+                        setPlanText("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-md border border-input bg-background p-4 text-sm whitespace-pre-wrap">
+                    {todayPlan.plan_text}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setPlanText(todayPlan.plan_text);
+                        setEditingOwnPlan(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit plan
+                    </Button>
+                    {todayPlan.status === "planned" ? (
+                      <Button
+                        type="button"
+                        onClick={() => markDone.mutate()}
+                        disabled={markDone.isPending}
+                      >
+                        Mark as done
+                      </Button>
+                    ) : (
+                      <Badge className="bg-success text-success-foreground">Done</Badge>
+                    )}
+                  </div>
+                </div>
+              )
             ) : (
               <div className="space-y-3">
-                <Textarea value={planText} onChange={(e) => setPlanText(e.target.value)} placeholder="Write your plan for today…" rows={4} />
-                <Button onClick={() => savePlan.mutate()} disabled={!planText.trim() || savePlan.isPending}>
+                <Textarea
+                  value={planText}
+                  onChange={(e) => setPlanText(e.target.value)}
+                  placeholder="Write your plan for today…"
+                  rows={4}
+                />
+                <Button
+                  onClick={() => savePlan.mutate()}
+                  disabled={!planText.trim() || savePlan.isPending}
+                >
                   Save plan
                 </Button>
               </div>
@@ -234,11 +333,16 @@ export default function AdminTodosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  <th className="text-left px-3 py-2 font-semibold sticky left-0 bg-muted/40 z-10 min-w-48">Staff</th>
+                  <th className="text-left px-3 py-2 font-semibold sticky left-0 bg-muted/40 z-10 min-w-48">
+                    Staff
+                  </th>
                   {days.map((day, index) => {
                     const isToday = fmtISO(day) === fmtISO(new Date());
                     return (
-                      <th key={index} className={`px-2 py-2 font-medium text-center min-w-20 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                      <th
+                        key={index}
+                        className={`px-2 py-2 font-medium text-center min-w-20 ${isToday ? "text-primary" : "text-muted-foreground"}`}
+                      >
                         <div className="text-[10px] uppercase">{DAY_LABELS[index]}</div>
                         <div className="text-xs">{day.getDate()}</div>
                       </th>
@@ -250,8 +354,12 @@ export default function AdminTodosPage() {
                 {filteredStaff.map((user) => (
                   <tr key={user.id} className="border-b hover:bg-muted/30">
                     <td className="px-3 py-2 sticky left-0 bg-card z-10">
-                      <div className="font-medium text-sm truncate max-w-48">{user.full_name || user.email}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{user.role ?? "Staff"}</div>
+                      <div className="font-medium text-sm truncate max-w-48">
+                        {user.full_name || user.email}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        {user.role ?? "Staff"}
+                      </div>
                     </td>
                     {dayKeys.map((dayKey) => {
                       const plan = planMap.get(user.id)?.get(dayKey);
@@ -260,8 +368,8 @@ export default function AdminTodosPage() {
                       const pillClass = isDone
                         ? "bg-success/10 text-success border border-success/20 hover:bg-success/20"
                         : isPlanned
-                        ? "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
-                        : "bg-muted/10 text-muted-foreground border border-muted/20";
+                          ? "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
+                          : "bg-muted/10 text-muted-foreground border border-muted/20";
                       const displayText = plan ? (isDone ? "Done" : "Planned") : "—";
 
                       return (
@@ -275,7 +383,9 @@ export default function AdminTodosPage() {
                               {displayText}
                             </button>
                           ) : (
-                            <div className={`min-w-[4.5rem] h-8 inline-flex items-center justify-center rounded-full px-3 text-xs font-semibold ${pillClass}`}>
+                            <div
+                              className={`min-w-[4.5rem] h-8 inline-flex items-center justify-center rounded-full px-3 text-xs font-semibold ${pillClass}`}
+                            >
                               {displayText}
                             </div>
                           )}
@@ -295,18 +405,25 @@ export default function AdminTodosPage() {
           <SheetHeader>
             <SheetTitle>{selectedPlan?.user_profiles?.full_name ?? selectedPlan?.id}</SheetTitle>
             <SheetDescription>
-              {selectedPlan && new Date(selectedPlan.plan_date).toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
+              {selectedPlan &&
+                new Date(selectedPlan.plan_date).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
             </SheetDescription>
           </SheetHeader>
 
           {selectedPlan && (
             <div className="space-y-4 mt-4">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={selectedPlan.status === "done" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                <Badge
+                  className={
+                    selectedPlan.status === "done"
+                      ? "bg-success text-success-foreground"
+                      : "bg-destructive text-destructive-foreground"
+                  }
+                >
                   {selectedPlan.status === "done" ? "Done" : "Planned"}
                 </Badge>
                 <div className="text-sm text-muted-foreground">
