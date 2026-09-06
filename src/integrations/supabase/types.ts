@@ -252,6 +252,7 @@ export type Database = {
       }
       daily_plans: {
         Row: {
+          achievement_text: string | null
           created_at: string
           id: string
           plan_date: string
@@ -262,6 +263,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          achievement_text?: string | null
           created_at?: string
           id?: string
           plan_date: string
@@ -272,6 +274,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          achievement_text?: string | null
           created_at?: string
           id?: string
           plan_date?: string

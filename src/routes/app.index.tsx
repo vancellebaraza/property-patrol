@@ -64,9 +64,25 @@ function ChecklistsHome() {
     day: "numeric",
   });
   const todayISO = new Date().toISOString().slice(0, 10);
+
+  function nextWorkdayISO(from) {
+    const d = new Date(from);
+    d.setDate(d.getDate() + 1);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  const nextWorkISO = nextWorkdayISO(new Date());
+  const nextWorkLabel = new Date(nextWorkISO + "T00:00:00").toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+
   const qc = useQueryClient();
-  const [planText, setPlanText] = useState("");
-  const [editingPlan, setEditingPlan] = useState(false);
+  const [achievementText, setAchievementText] = useState("");
+  const [editingAchievement, setEditingAchievement] = useState(false);
+  const [nextPlanText, setNextPlanText] = useState("");
+  const [editingNextPlan, setEditingNextPlan] = useState(false);
 
   const { data: todayPlan, isLoading: todayPlanLoading } = useQuery({
     queryKey: ["daily-plan", profile?.id, todayISO],
@@ -83,58 +99,69 @@ function ChecklistsHome() {
     },
   });
 
-  const savePlan = useMutation({
+  const saveAchievement = useMutation({
     mutationFn: async () => {
       if (!profile) throw new Error("Profile not loaded");
-      const { error } = await supabase.from("daily_plans").insert({
-        user_id: profile.id,
-        property_id: profile.property_id ?? myProperties?.[0]?.id ?? null,
-        plan_date: todayISO,
-        plan_text: planText,
-        status: "planned",
-      });
+      const { error } = await supabase.from("daily_plans").upsert(
+        {
+          user_id: profile.id,
+          property_id: profile.property_id ?? myProperties?.[0]?.id ?? null,
+          plan_date: todayISO,
+          plan_text: todayPlan?.plan_text ?? "",
+          achievement_text: achievementText,
+          status: todayPlan?.status ?? "planned",
+        },
+        { onConflict: "user_id,plan_date" }
+      );
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, todayISO] });
-      setPlanText("");
-    },
-  });
-
-  const markDone = useMutation({
-    mutationFn: async () => {
-      if (!todayPlan) throw new Error("No plan available");
-      const { error } = await supabase
-        .from("daily_plans")
-        .update({ status: "done" })
-        .eq("id", todayPlan.id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, todayISO] }),
-  });
-
-  const updatePlan = useMutation({
-    mutationFn: async () => {
-      if (!profile || !todayPlan) throw new Error("Plan not loaded");
-      const { data, error } = await supabase
-        .from("daily_plans")
-        .update({ plan_text: planText })
-        .eq("id", todayPlan.id)
-        .eq("user_id", profile.id)
-        .eq("plan_date", todayISO)
-        .select("id")
-        .maybeSingle();
-      if (error) throw error;
-      if (!data)
-        throw new Error("Your plan could not be updated. Check the daily_plans update policy.");
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, todayISO] });
-      setPlanText("");
-      setEditingPlan(false);
+      setEditingAchievement(false);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Your plan could not be updated.");
+      toast.error(error instanceof Error ? error.message : "Could not save your update.");
+    },
+  });
+
+  const { data: nextPlan, isLoading: nextPlanLoading } = useQuery({
+    queryKey: ["daily-plan", profile?.id, nextWorkISO],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("daily_plans")
+        .select("*")
+        .eq("user_id", profile.id)
+        .eq("plan_date", nextWorkISO)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveNextPlan = useMutation({
+    mutationFn: async () => {
+      if (!profile) throw new Error("Profile not loaded");
+      const { error } = await supabase.from("daily_plans").upsert(
+        {
+          user_id: profile.id,
+          property_id: profile.property_id ?? myProperties?.[0]?.id ?? null,
+          plan_date: nextWorkISO,
+          plan_text: nextPlanText,
+          achievement_text: nextPlan?.achievement_text ?? null,
+          status: nextPlan?.status ?? "planned",
+        },
+        { onConflict: "user_id,plan_date" }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, nextWorkISO] });
+      setEditingNextPlan(false);
+      setNextPlanText("");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not save your plan.");
     },
   });
 
@@ -175,25 +202,94 @@ function ChecklistsHome() {
         <CardContent className="space-y-4">
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider">
-              Today's Plan
+              Today's Achievement
             </div>
-            <h2 className="text-lg font-semibold">Plan for today</h2>
+            <h2 className="text-lg font-semibold">What did you get done today?</h2>
+          </div>
+          {todayPlanLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : editingAchievement ? (
+            <div className="space-y-3">
+              <Textarea
+                value={achievementText}
+                onChange={(event) => setAchievementText(event.target.value)}
+                placeholder="What did you achieve today…"
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => saveAchievement.mutate()}
+                  disabled={!achievementText.trim() || saveAchievement.isPending}
+                >
+                  Save
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingAchievement(false);
+                    setAchievementText("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : todayPlan && todayPlan.achievement_text ? (
+            <div className="space-y-3">
+              <div className="rounded-md border border-input bg-background p-4 text-sm whitespace-pre-wrap">
+                {todayPlan.achievement_text}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAchievementText(todayPlan.achievement_text || "");
+                  setEditingAchievement(true);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAchievementText("");
+                setEditingAchievement(true);
+              }}
+            >
+              Add today's achievement
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">
+              Plan Ahead
+            </div>
+            <h2 className="text-lg font-semibold">Plan for {nextWorkLabel}</h2>
           </div>
 
-          {todayPlanLoading ? (
-            <p className="text-sm text-muted-foreground">Loading plan…</p>
-          ) : todayPlan ? (
-            editingPlan ? (
+          {nextPlanLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : nextPlan ? (
+            editingNextPlan ? (
               <div className="space-y-3">
                 <Textarea
-                  value={planText}
-                  onChange={(event) => setPlanText(event.target.value)}
+                  value={nextPlanText}
+                  onChange={(event) => setNextPlanText(event.target.value)}
                   rows={5}
                 />
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => updatePlan.mutate()}
-                    disabled={!planText.trim() || updatePlan.isPending}
+                    onClick={() => saveNextPlan.mutate()}
+                    disabled={!nextPlanText.trim() || saveNextPlan.isPending}
                   >
                     Save changes
                   </Button>
@@ -201,8 +297,8 @@ function ChecklistsHome() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setEditingPlan(false);
-                      setPlanText("");
+                      setEditingNextPlan(false);
+                      setNextPlanText("");
                     }}
                   >
                     Cancel
@@ -212,45 +308,32 @@ function ChecklistsHome() {
             ) : (
               <div className="space-y-3">
                 <div className="rounded-md border border-input bg-background p-4 text-sm whitespace-pre-wrap">
-                  {todayPlan.plan_text}
+                  {nextPlan.plan_text}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setPlanText(todayPlan.plan_text);
-                      setEditingPlan(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit plan
-                  </Button>
-                  {todayPlan.status === "planned" ? (
-                    <Button
-                      type="button"
-                      onClick={() => markDone.mutate()}
-                      disabled={markDone.isPending}
-                    >
-                      Mark as done
-                    </Button>
-                  ) : (
-                    <Badge className="bg-success text-success-foreground">Done</Badge>
-                  )}
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setNextPlanText(nextPlan.plan_text);
+                    setEditingNextPlan(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit plan
+                </Button>
               </div>
             )
           ) : (
             <div className="space-y-3">
               <Textarea
-                value={planText}
-                onChange={(event) => setPlanText(event.target.value)}
-                placeholder="Write your plan for today…"
+                value={nextPlanText}
+                onChange={(event) => setNextPlanText(event.target.value)}
+                placeholder={"Write your plan for " + nextWorkLabel + "…"}
                 rows={5}
               />
               <Button
-                onClick={() => savePlan.mutate()}
-                disabled={!planText.trim() || savePlan.isPending}
+                onClick={() => saveNextPlan.mutate()}
+                disabled={!nextPlanText.trim() || saveNextPlan.isPending}
               >
                 Save plan
               </Button>
