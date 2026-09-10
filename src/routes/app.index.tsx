@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { ClipboardList, CalendarDays, Wrench, ChevronRight, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -124,6 +125,31 @@ function ChecklistsHome() {
     },
   });
 
+  const toggleDone = useMutation({
+    mutationFn: async () => {
+      if (!profile) throw new Error("Profile not loaded");
+      const nextStatus = todayPlan && todayPlan.status === "done" ? "planned" : "done";
+      const { error } = await supabase.from("daily_plans").upsert(
+        {
+          user_id: profile.id,
+          property_id: profile.property_id ?? myProperties?.[0]?.id ?? null,
+          plan_date: todayISO,
+          plan_text: todayPlan ? todayPlan.plan_text : "",
+          achievement_text: todayPlan ? todayPlan.achievement_text : null,
+          status: nextStatus,
+        },
+        { onConflict: "user_id,plan_date" }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["daily-plan", profile?.id, todayISO] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not update status.");
+    },
+  });
+
   const { data: nextPlan, isLoading: nextPlanLoading } = useQuery({
     queryKey: ["daily-plan", profile?.id, nextWorkISO],
     enabled: !!profile?.id,
@@ -205,6 +231,17 @@ function ChecklistsHome() {
               Today's Achievement
             </div>
             <h2 className="text-lg font-semibold">What did you get done today?</h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={!!todayPlan && todayPlan.status === "done"}
+              onCheckedChange={() => toggleDone.mutate()}
+              disabled={toggleDone.isPending}
+            />
+            <span className="text-sm font-medium">
+              {todayPlan && todayPlan.status === "done" ? "Done" : "Not done"}
+            </span>
           </div>
           {todayPlanLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
